@@ -1,25 +1,23 @@
 package com.bulkchef;
 
-import java.awt.Color;
-import java.awt.Graphics;
-
 import javax.swing.JFrame;
-import javax.swing.JPanel;
 
-public class Game extends JPanel {
+public class Game {
+    public static final int WIDTH = 800;
+    public static final int HEIGHT = 400;
+    public static final String TITLE = "Side Scroller";
+
     public static void main(String[] args) {
-        JFrame frame = new JFrame("Side Scroller");
-        Game game = new Game();
-        frame.add(game);
-        frame.setSize(800, 400);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setVisible(true);
-    }
+        JFrame frame = new JFrame(TITLE);
+        GamePanel panel = new GamePanel();
 
-    @Override
-    protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
-        g.setColor(Color.CYAN);
-        g.fillRect(100, 150, 50, 50); // placeholder "player"
+        frame.add(panel);
+        frame.setSize(WIDTH, HEIGHT);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setResizable(false);
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+
+        panel.startGameLoop();
     }
 }
