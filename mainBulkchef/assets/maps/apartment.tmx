@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.12.0" orientation="orthogonal" renderorder="left-down" width="30" height="20" tilewidth="16" tileheight="16" infinite="0" nextlayerid="5" nextobjectid="1">
+ <tileset firstgid="1" source="room.tsx"/>
+ <layer id="1" name="ground" width="30" height="20">
+  <data encoding="base64" compression="zlib">
+   eJxjYBg4kALEqVgwPjlKMAyUAnEZFoxPjhI8ai8qBsVF2gDYSys8au+ovYPJXoYBtJeSMBq1l772YgOlBORpBYarvQDtI8m2
+  </data>
+ </layer>
+ <layer id="3" name="background" width="30" height="20">
+  <data encoding="base64" compression="zlib">
+   eJyTZWBgcGXEjgXwyFGC5YHm6jHgBop45CgBnKP2ogB3xoGxl1Zg1N5Re0ftZWDQGSB7KS3HRu2lj70GQGwPxA5oWBoqL4NFDoRtcYgTix1xuAcWBgYk+oNSQA97AX4kFFE=
+  </data>
+ </layer>
+ <objectgroup id="4" name="objects"/>
+ <layer id="2" name="foreground" width="30" height="20" visible="0">
+  <data encoding="base64" compression="zlib">
+   eJztwTEBAAAAwqD1T20JT6AAAHgaCWAAAQ==
+  </data>
+ </layer>
+</map>

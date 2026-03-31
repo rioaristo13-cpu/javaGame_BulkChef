@@ -67,12 +67,6 @@ public class MainMenuScreen implements Screen {
         float coverY = BulkChef.HEIGHT - COVER_H - 30;
         game.batch.draw(coverTexture, coverX, coverY, COVER_W, COVER_H);
 
-        /*// Subtitle
-        font.getData().setScale(1.05f);
-        font.setColor(0.55f, 0.45f, 0.75f, 0.75f);
-        GlyphLayout sub = new GlyphLayout(font, "TRAIN  \u2022  COOK  \u2022  COMPETE");
-        font.draw(game.batch, sub, (BulkChef.WIDTH - sub.width) / 2f, coverY - 14);*/
-
         // Button label
         font.getData().setScale(1.5f);
         font.setColor(hover ? Color.WHITE : new Color(1f, 0.92f, 0.72f, 1f));
@@ -80,12 +74,6 @@ public class MainMenuScreen implements Screen {
         font.draw(game.batch, btn,
             startBtn.x + (startBtn.width - btn.width) / 2f,
             startBtn.y + startBtn.height - 13);
-
-        /*// Footer
-        font.getData().setScale(0.80f);
-        font.setColor(0.28f, 0.24f, 0.40f, 1f);
-        GlyphLayout hint = new GlyphLayout(font, "A / D  or  \u2190 \u2192  to move");
-        font.draw(game.batch, hint, (BulkChef.WIDTH - hint.width) / 2f, 26);
 */
         game.batch.end();
 
