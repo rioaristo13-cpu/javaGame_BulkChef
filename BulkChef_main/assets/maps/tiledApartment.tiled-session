@@ -1,0 +1,53 @@
+{
+    "activeFile": "objects.tsx",
+    "console.history": [
+        "file:///D:/Documents/GitHub/javaGame_BulkChef/mainBulkchef/assets/maps/apartment.tmx"
+    ],
+    "expandedProjectPaths": [
+    ],
+    "file.lastUsedOpenFilter": "All Files (*)",
+    "fileStates": {
+        "D:/Documents/GitHub/javaGame_BulkChef/mainBulkchef/assets/maps/room.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "apartmentmap.tmx": {
+            "scale": 32,
+            "selectedLayer": 4,
+            "viewCenter": {
+                "x": 119.375,
+                "y": 283.75
+            }
+        },
+        "objects.tsx": {
+            "dynamicWrapping": true,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "room.tsx": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1,
+            "scaleInEditor": 8
+        }
+    },
+    "last.imagePath": "C:/Users/rioar/Desktop/realcchef/assets/objects",
+    "map.lastUsedFormat": "tmx",
+    "map.layerDataFormat": "3",
+    "map.renderOrder": "2",
+    "map.tileHeight": 16,
+    "map.tileWidth": 16,
+    "openFiles": [
+        "apartmentmap.tmx",
+        "room.tsx",
+        "objects.tsx"
+    ],
+    "project": "tiledApartment.tiled-project",
+    "recentFiles": [
+        "apartmentmap.tmx",
+        "room.tsx",
+        "objects.tsx",
+        "D:/Documents/GitHub/javaGame_BulkChef/mainBulkchef/assets/maps/room.tsx"
+    ],
+    "tileset.lastUsedFormat": "tsx",
+    "tileset.type": 1
+}
