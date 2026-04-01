@@ -55,19 +55,26 @@ public class GameScreen implements Screen {
     private static final float HITBOX_W = 16f / PPM;
     private static final float HITBOX_H = 20f / PPM;
 
-    // Sort tekstur
-    private static class DrawEntry {
-        float x, y, w, h;
-        float footY;
-        Texture texture;
+    // Untuk merender objek sesuai di tiled (flipped atau tidak)
+    private static final int FLIP_HORIZONTAL = 0x80000000;
+    private static final int FLIP_VERTICAL   = 0x40000000;
 
-        DrawEntry(float x, float y, float w, float h, Texture texture) {
-            this.x = x;
-            this.y = y;
-            this.w = w;
-            this.h = h;
-            this.footY = y;
-            this.texture = texture;
+    // --- Y-sort ---
+    private static class DrawEntry {
+        float x, y, w, h, footY;
+        Texture texture;
+        boolean flipX, flipY;
+
+        DrawEntry(float x, float y, float w, float h, Texture texture, boolean flipX, boolean flipY) {
+            this.x          = x;
+            this.y          = y;
+            this.w          = w;
+            this.h          = h;
+            this.footY      = y;
+            this.texture    = texture;
+            this.flipX      = flipX;
+            this.flipY      = flipY;
+
         }
     }
 
@@ -77,8 +84,11 @@ public class GameScreen implements Screen {
     private static final Comparator<DrawEntry> Y_SORT_DESC =
         (a, b) -> Float.compare(b.footY, a.footY);
 
-    private float benchX, benchY;
-    private float treadmillX, treadmillY;
+    // Prop positions and flip flags — loaded from TMX
+    private float   benchX,     benchY;
+    private boolean benchFlipX, benchFlipY;
+    private float   treadmillX,     treadmillY;
+    private boolean treadmillFlipX, treadmillFlipY;
 
     public GameScreen(BulkChef game) {
         this.game = game;
@@ -109,6 +119,7 @@ public class GameScreen implements Screen {
     }
 
     private void loadPropsLayer() {
+
         MapLayer propsLayer = map.getLayers().get("objects");
         if (propsLayer == null) {
             Gdx.app.error("Map","No objects layers found");
@@ -116,25 +127,31 @@ public class GameScreen implements Screen {
         }
 
         for (MapObject object : propsLayer.getObjects()) {
-            if (object.getProperties().get("gid", Integer.class) == null) continue;
+            Integer rawGid = object.getProperties().get("gid", Integer.class);
+            if (rawGid == null) continue;
 
             String name = object.getName();
             if (name == null || name.isEmpty()) continue;
 
-            float px = object.getProperties().get("x", Float.class);
-            float py = object.getProperties().get("y", Float.class);
+            // Extract flip flags from the raw GID bits
+            boolean flipX = (rawGid & FLIP_HORIZONTAL) != 0;
+            boolean flipY = (rawGid & FLIP_VERTICAL)   != 0;
 
-            float worldX = px / PPM;
-            float worldY = py / PPM;
+            float worldX = object.getProperties().get("x", Float.class) / PPM;
+            float worldY = object.getProperties().get("y", Float.class) / PPM;
 
             switch (name) {
                 case "bench":
-                    benchX = worldX;
-                    benchY = worldY;
+                    benchX     = worldX;
+                    benchY     = worldY;
+                    benchFlipX = flipX;
+                    benchFlipY = flipY;
                     break;
                 case "treadmill":
-                    treadmillX = worldX;
-                    treadmillY = worldY;
+                    treadmillX     = worldX;
+                    treadmillY     = worldY;
+                    treadmillFlipX = flipX;
+                    treadmillFlipY = flipY;
                     break;
             }
         }
@@ -238,8 +255,7 @@ public class GameScreen implements Screen {
             new Vector2(
                 (rect.x / PPM) + size.x,
                 (rect.y / PPM) + size.y
-            ),
-            0f
+            ), 0f
         );
         return polygon;
     }
@@ -314,21 +330,21 @@ public class GameScreen implements Screen {
             playerPos.x - PLAYER_W / 2f,
             playerPos.y - PLAYER_H / 2f,
             PLAYER_W, PLAYER_H,
-            playerTexture
+            playerTexture, false, false
         ));
 
         // Benchpress
         drawList.add(new DrawEntry(
             benchX, benchY,
             BENCH_W, BENCH_H,
-            benchTexture
+            benchTexture, benchFlipX, benchFlipY
         ));
 
         // Treadmill
         drawList.add(new DrawEntry(
             treadmillX, treadmillY,
             TREADMILL_W, TREADMILL_H,
-            treadmillTexture
+            treadmillTexture, treadmillFlipX, treadmillFlipY
         ));
 
         // Disort
@@ -336,7 +352,17 @@ public class GameScreen implements Screen {
 
         for (int i = 0; i < drawList.size; i++) {
             DrawEntry e = drawList.get(i);
-            batch.draw(e.texture, e.x, e.y, e.w, e.h);
+            batch.draw(
+                e.texture,
+                e.x, e.y,                           // position
+                0, 0,                               // origin
+                e.w, e.h,                           // size
+                1f, 1f,                             // scale
+                0f,                                 // rotation
+                0, 0,                               // source x, y
+                e.texture.getWidth(), e.texture.getHeight(), // source w, h
+                e.flipX, e.flipY                    // flip flags
+            );
         }
     }
 
