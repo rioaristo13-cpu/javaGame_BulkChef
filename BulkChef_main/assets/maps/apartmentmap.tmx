@@ -15,7 +15,7 @@
  <objectgroup id="6" name="player" locked="1">
   <object id="19" name="playerSpawn" x="101.636" y="303.633" width="4" height="3"/>
  </objectgroup>
- <objectgroup id="7" name="objects">
+ <objectgroup id="7" name="objects" visible="0">
   <object id="35" gid="394" x="95.875" y="305.875" width="16" height="31"/>
   <object id="41" name="bench" gid="392" x="160" y="272.273" width="32" height="28"/>
   <object id="42" name="treadmill" gid="393" x="159.636" y="223.909" width="32" height="25"/>
@@ -33,8 +33,8 @@
   <object id="11" x="89.5" y="273" width="5.625" height="47.0625"/>
   <object id="12" x="112.938" y="273.157" width="6" height="46.7813"/>
   <object id="20" x="88.9792" y="319.823" width="30.2917" height="1.39583"/>
-  <object id="43" x="160.348" y="210.783" width="30.7391" height="12.2609"/>
-  <object id="44" x="162.81" y="257.088" width="28.3478" height="14.2609"/>
+  <object id="43" x="160.348" y="210.783" width="30.7391" height="0.3859"/>
+  <object id="44" x="160.123" y="257.088" width="31.0353" height="0.427567"/>
  </objectgroup>
  <layer id="2" name="foreground" width="30" height="20">
   <data encoding="base64" compression="zlib">

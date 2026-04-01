@@ -41,21 +41,21 @@ public class GameScreen implements Screen {
     // Tiled uses pixels, Box2D uses meters — scale down
     private static final float PPM = 16f; // pixels per meter
 
-    // Object size
+    // Besar objek di dunia / PPM
     private static final float BENCH_W = 32f / PPM;
     private static final float BENCH_H = 28f / PPM;
     private static final float TREADMILL_W = 32f / PPM;
     private static final float TREADMILL_H = 25f / PPM; // LIAT DARI TILED/ASEPRITE
 
-    // Player size
+    // Besar karakter
     private static final float PLAYER_W = 16f / PPM;
     private static final float PLAYER_H = 31f / PPM;
 
-    //Hitbox size
+    // Besar hitbox
     private static final float HITBOX_W = 16f / PPM;
     private static final float HITBOX_H = 20f / PPM;
 
-    // Sorting textures
+    // Sort tekstur
     private static class DrawEntry {
         float x, y, w, h;
         float footY;
@@ -74,8 +74,8 @@ public class GameScreen implements Screen {
     // Dipake setiap frame selanjutnya
     private final Array<DrawEntry> drawList = new Array<>();
 
-    //
-    private static final Comparator<DrawEntry> Y_SORT_DESC = (a, b) -> Float.compare(a.footY, b.footY);
+    private static final Comparator<DrawEntry> Y_SORT_DESC =
+        (a, b) -> Float.compare(b.footY, a.footY);
 
     private float benchX, benchY;
     private float treadmillX, treadmillY;
@@ -94,21 +94,50 @@ public class GameScreen implements Screen {
 
         map = new TmxMapLoader().load("maps/apartmentmap.tmx");
         mapRenderer = new OrthogonalTiledMapRenderer(map, 1f / PPM);
+
         loadCollisionLayer();
+        loadPropsLayer();
 
         playerTexture = new Texture(Gdx.files.internal("objects/player.png"));
         benchTexture = new Texture(Gdx.files.internal("objects/bench.png"));
         treadmillTexture = new Texture(Gdx.files.internal("objects/treadmill.png"));
 
-        benchX = 160f;
-        benchY = 272f;
-        treadmillX = 160f;
-        treadmillY = 222f;
-
         spawnPlayer();
 
         camera.zoom = 0.25f;
         batch = new SpriteBatch();
+    }
+
+    private void loadPropsLayer() {
+        MapLayer propsLayer = map.getLayers().get("objects");
+        if (propsLayer == null) {
+            Gdx.app.error("Map","No objects layers found");
+            return;
+        }
+
+        for (MapObject object : propsLayer.getObjects()) {
+            if (object.getProperties().get("gid", Integer.class) == null) continue;
+
+            String name = object.getName();
+            if (name == null || name.isEmpty()) continue;
+
+            float px = object.getProperties().get("x", Float.class);
+            float py = object.getProperties().get("y", Float.class);
+
+            float worldX = px / PPM;
+            float worldY = py / PPM;
+
+            switch (name) {
+                case "bench":
+                    benchX = worldX;
+                    benchY = worldY;
+                    break;
+                case "treadmill":
+                    treadmillX = worldX;
+                    treadmillY = worldY;
+                    break;
+            }
+        }
     }
 
     private void spawnPlayer() {
@@ -305,7 +334,8 @@ public class GameScreen implements Screen {
         // Disort
         drawList.sort(Y_SORT_DESC);
 
-        for (DrawEntry e : drawList) {
+        for (int i = 0; i < drawList.size; i++) {
+            DrawEntry e = drawList.get(i);
             batch.draw(e.texture, e.x, e.y, e.w, e.h);
         }
     }
