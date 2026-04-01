@@ -1,5 +1,0 @@
-Cover.png
-bed.png
-character_prototype.png
-kitchen.png
-protein.png
