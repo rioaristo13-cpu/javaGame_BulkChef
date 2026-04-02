@@ -37,6 +37,7 @@ public class GameScreen implements Screen {
     private Body playerBody;
     private SpriteBatch batch ;
     private final BulkChef game;
+    private boolean isPaused = false;
 
     // Tiled uses pixels, Box2D uses meters — scale down
     private static final float PPM = 16f; // pixels per meter
@@ -302,12 +303,24 @@ public class GameScreen implements Screen {
 
     @Override
     public void render(float delta) {
-        ScreenUtils.clear(0,0,0,1);
-        handleInput();
-        world.step(1/60f, 6, 2);
+        ScreenUtils.clear(0, 0, 0, 1);
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            isPaused = !isPaused;
 
+            if (isPaused) {
+                playerBody.setLinearVelocity(0, 0);
+            }
+        }
         Vector2 playerPos= playerBody.getPosition();
-        camera.position.lerp(new Vector3(playerPos.x,  playerPos.y, 0f), 0.1f);
+
+        if (!isPaused) {
+            handleInput();
+            world.step(1/60f, 6, 2);
+
+            playerPos = playerBody.getPosition();
+            camera.position.lerp(new Vector3(playerPos.x,  playerPos.y, 0f), 0.1f);
+
+        }
         camera.update();
 
         mapRenderer.setView(camera);
@@ -320,6 +333,10 @@ public class GameScreen implements Screen {
 
         //Viewing the collision shapes for debugging.
         debugRenderer.render(world, camera.combined);
+
+        if (isPaused && Gdx.input.isKeyJustPressed(Input.Keys.P)) {
+            game.setScreen(new MainMenuScreen(game));
+        }
     }
 
     private void drawYSorted(Vector2 playerPos) {
@@ -367,10 +384,10 @@ public class GameScreen implements Screen {
     }
 
     private void handleInput() {
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            game.setScreen(new MainMenuScreen(game));
-            return; // stop processing input after switching screen
-        }
+//        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+//            game.setScreen(new MainMenuScreen(game));
+//            return; // stop processing input after switching screen
+//        }
 
         float speed = 4.2f;
         float vx = 0;
@@ -407,6 +424,10 @@ public class GameScreen implements Screen {
 
     @Override
     public void pause() {
+        isPaused = true;
+        if (playerBody != null) {
+            playerBody.setLinearVelocity(0, 0);
+        }
 
     }
 
