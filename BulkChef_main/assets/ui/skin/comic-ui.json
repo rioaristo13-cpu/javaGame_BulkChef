@@ -60,7 +60,8 @@
 	"default": {
 		"up": "button",
 		"down": "button-pressed",
-		"over": "button-highlighted"
+		"over": "button-highlighted",
+		"focused": "button-highlighted"
 	}
 },
 "com.badlogic.gdx.scenes.scene2d.ui.CheckBox$CheckBoxStyle": {
@@ -190,9 +191,11 @@
 		"fontColor": "black",
 		"downFontColor": "black",
 		"overFontColor": "kuning",
+		"focusedFontColor": "kuning",
 		"up": "button",
 		"down": "button-pressed",
-		"over": "button-highlighted"
+		"over": "button-highlighted",
+		"focused": "button-highlighted"
 	},
 	"resume-btn": {
 		"font": "button",
@@ -202,6 +205,17 @@
 		"up": "button",
 		"down": "button-pressed",
 		"over": "button-highlighted"
+	},
+	"pause-btn": {
+		"font": "button",
+		"fontColor": "black",
+		"downFontColor": "gray",
+		"overFontColor": "kuning",
+		"focusedFontColor": "kuning",
+		"up": "button",
+		"down": "button-pressed",
+		"over": "button-highlighted",
+		"focused": "button-highlighted"
 	}
 },
 "com.badlogic.gdx.scenes.scene2d.ui.TextField$TextFieldStyle": {

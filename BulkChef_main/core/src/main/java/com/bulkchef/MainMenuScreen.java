@@ -1,6 +1,7 @@
 package com.bulkchef;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -15,6 +16,9 @@ public class MainMenuScreen implements Screen {
     private final BulkChef game;
     private Stage stage;
     private boolean isStarting = false;
+    private TextButton startButton;
+    private TextButton quitButton;
+    private int selectedIndex = 0;
 
     public MainMenuScreen(BulkChef game) {
         this.game = game;
@@ -26,7 +30,31 @@ public class MainMenuScreen implements Screen {
         Gdx.input.setInputProcessor(stage);
 
         SceneComposerStageBuilder builder = new SceneComposerStageBuilder();
-        builder.build(stage, game.skin, Gdx.files.internal("ui/startmenu/startmenu.json"));
+        builder.build(stage, game.skin, Gdx.files.internal("ui/homescreen/startmenu.json"));
+
+        startButton = stage.getRoot().findActor("newgame");
+        quitButton = stage.getRoot().findActor("quit");
+
+        stage.setKeyboardFocus(startButton);
+        selectedIndex = 0;
+
+        if (startButton != null) {
+            startButton.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
+                    game.setScreen(new GameScreen(game));
+                }
+            });
+        }
+
+        if (quitButton != null) {
+            quitButton.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
+                    Gdx.app.exit();
+                }
+            });
+        }
 
         TextButton startButton = stage.getRoot().findActor("newgame");
         startButton.addListener(new ChangeListener() {
@@ -56,9 +84,32 @@ public class MainMenuScreen implements Screen {
     @Override
     public void render(float delta) {
         ScreenUtils.clear(0, 0, 0, 1);
+
+        if (Gdx.input.isKeyJustPressed(Input.Keys.TAB)) {
+            selectedIndex = (selectedIndex + 1) % 2;
+
+            if (selectedIndex == 0) {
+            stage.setKeyboardFocus(startButton);
+        } else {
+            stage.setKeyboardFocus(quitButton);
+        }
+    }
+
+    if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
+        Actor focused = stage.getKeyboardFocus();
+
+        if (focused == startButton) {
+            game.setScreen(new GameScreen(game));
+        } else if (focused == quitButton) {
+            Gdx.app.exit();
+        }
+    }
+
         stage.act(delta);
         stage.draw();
     }
+
+
 
     @Override
     public void resize(int width, int height) {

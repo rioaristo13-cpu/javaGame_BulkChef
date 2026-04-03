@@ -30,6 +30,7 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.ray3k.stripe.scenecomposer.SceneComposerStageBuilder;
+import com.sun.tools.javac.Main;
 
 
 import java.util.Comparator;
@@ -49,6 +50,9 @@ public class GameScreen implements Screen {
     private final BulkChef game;
     private Stage stage;
     private boolean isPaused = false;
+    private TextButton resumeButton;
+    private TextButton quitButton;
+    private int selectedIndex = 0;
 
     // Tiled uses pixels, Box2D uses meters — scale down
     private static final float PPM = 16f; // pixels per meter
@@ -133,20 +137,46 @@ public class GameScreen implements Screen {
 
         stage = new Stage(new ScreenViewport());
 
-        SceneComposerStageBuilder builder = new
-        SceneComposerStageBuilder();
-        builder.build(stage, game.skin,
-            Gdx.files.internal("ui/pause/pausemenu.json"));
+        SceneComposerStageBuilder builder = new SceneComposerStageBuilder();
+        builder.build(stage, game.skin, Gdx.files.internal("ui/pause/pausemenu.json"));
 
-        TextButton resumeButton = stage.getRoot().findActor("resume");
 
-        resumeButton.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                isPaused = false;
-                Gdx.input.setInputProcessor(null);
-            }
-        });
+        resumeButton = stage.getRoot().findActor("resume");
+        quitButton = stage.getRoot().findActor("quit");
+
+        if (resumeButton != null) {
+            resumeButton.setProgrammaticChangeEvents(true);
+            resumeButton.clearActions();
+        }
+
+        if (quitButton != null) {
+            quitButton.setProgrammaticChangeEvents(true);
+            quitButton.clearActions();
+        }
+
+        stage.setKeyboardFocus(resumeButton);
+        selectedIndex = 0;
+
+        if (resumeButton != null) {
+            resumeButton.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
+                    isPaused = false;
+                    Gdx.input.setInputProcessor(null);
+                }
+            });
+        }
+
+        if (quitButton != null) {
+            quitButton.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
+                    game.setScreen(new MainMenuScreen(game));
+                }
+            });
+        }
+
+
     }
 
     private void loadPropsLayer() {
@@ -337,24 +367,25 @@ public class GameScreen implements Screen {
 
             if (isPaused) {
                 playerBody.setLinearVelocity(0, 0);
-
                 Gdx.input.setInputProcessor(stage);
+                stage.setKeyboardFocus(resumeButton);
+                selectedIndex = 0;
             } else {
                 Gdx.input.setInputProcessor(null);
             }
         }
-        Vector2 playerPos= playerBody.getPosition();
+        Vector2 playerPos = playerBody.getPosition();
 
         if (!isPaused) {
             handleInput();
-            world.step(1/60f, 6, 2);
+            world.step(1 / 60f, 6, 2);
 
             playerPos = playerBody.getPosition();
-            camera.position.lerp(new Vector3(playerPos.x,  playerPos.y, 0f), 0.1f);
+            camera.position.lerp(new Vector3(playerPos.x, playerPos.y, 0f), 0.1f);
 
             viewport.apply();
-
         }
+
         camera.update();
 
         mapRenderer.setView(camera);
@@ -365,19 +396,39 @@ public class GameScreen implements Screen {
         drawYSorted(playerPos);
         batch.end();
 
-        //Viewing the collision shapes for debugging.
         debugRenderer.render(world, camera.combined);
 
-        if (isPaused && Gdx.input.isKeyJustPressed(Input.Keys.P)) {
-            game.setScreen(new MainMenuScreen(game));
-        }
-
         if (isPaused) {
-            stage.act(delta);
+            if (Gdx.input.isKeyJustPressed(Input.Keys.TAB)) {
+                selectedIndex = (selectedIndex + 1) % 2;
+
+                if (selectedIndex == 0) {
+                    stage.setKeyboardFocus(resumeButton);
+                    System.out.println("fokus ke resume");
+                } else {
+                    stage.setKeyboardFocus(quitButton);
+                    System.out.println("fokus ke quit");
+                }
+            }
+
+            if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
+                Actor focused = stage.getKeyboardFocus();
+
+                if (focused == resumeButton) {
+                    isPaused = false;
+                    Gdx.input.setInputProcessor(null);
+                } else if (focused == quitButton) {
+                    game.setScreen(new MainMenuScreen(game));
+                }
+            }
+
+            stage.act(0f);
             stage.draw();
         }
-
     }
+
+
+
 
     private void drawYSorted(Vector2 playerPos) {
         drawList.clear();

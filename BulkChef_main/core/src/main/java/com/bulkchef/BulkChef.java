@@ -11,7 +11,7 @@ public class BulkChef extends Game {
 
     @Override
     public void create() {
-        skin = new Skin(Gdx.files.internal("ui/startmenu/comic-ui.json"));
+        skin = new Skin(Gdx.files.internal("ui/skin/comic-ui.json"));
         setScreen(new MainMenuScreen(this));
     }
 

@@ -10,7 +10,7 @@
 					"text": "resume",
 					"style": {
 						"clazz": "com.badlogic.gdx.scenes.scene2d.ui.TextButton",
-						"name": "resume-btn"
+						"name": "pause-btn"
 					},
 					"checked": false,
 					"disabled": false,
@@ -48,9 +48,55 @@
 				"uniformX": false,
 				"uniformY": false,
 				"colSpan": 1
+			},
+			{
+				"child": {
+					"class": "TextButton",
+					"name": "quit",
+					"text": "quit",
+					"style": {
+						"clazz": "com.badlogic.gdx.scenes.scene2d.ui.TextButton",
+						"name": "pause-btn"
+					},
+					"checked": false,
+					"disabled": false,
+					"color": null,
+					"padLeft": 0,
+					"padRight": 0,
+					"padTop": 0,
+					"padBottom": 0,
+					"touchable": "enabled",
+					"visible": true
+				},
+				"row": 1,
+				"column": 0,
+				"padLeft": 0,
+				"padRight": 0,
+				"padTop": 0,
+				"padBottom": 0,
+				"spaceLeft": 0,
+				"spaceRight": 0,
+				"spaceTop": 0,
+				"spaceBottom": 0,
+				"expandX": false,
+				"expandY": false,
+				"fillX": false,
+				"fillY": false,
+				"growX": false,
+				"growY": false,
+				"alignment": 1,
+				"minWidth": -1,
+				"minHeight": -1,
+				"maxWidth": -1,
+				"maxHeight": -1,
+				"preferredWidth": -1,
+				"preferredHeight": -1,
+				"uniformX": false,
+				"uniformY": false,
+				"colSpan": 1
 			}
 		],
-		"name": "pause-btn",
+		"name": "pausemenu",
 		"background": null,
 		"color": null,
 		"padLeft": 0,
