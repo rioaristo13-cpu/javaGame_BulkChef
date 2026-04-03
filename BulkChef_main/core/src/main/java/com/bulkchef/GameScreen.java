@@ -22,6 +22,9 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
+import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.badlogic.gdx.utils.viewport.Viewport;
+
 
 import java.util.Comparator;
 
@@ -30,6 +33,7 @@ public class GameScreen implements Screen {
     private World world;
     private Box2DDebugRenderer debugRenderer;
     private OrthographicCamera camera;
+    private Viewport viewport;
     private OrthogonalTiledMapRenderer mapRenderer;
     private Texture playerTexture;
     private Texture benchTexture;
@@ -59,6 +63,9 @@ public class GameScreen implements Screen {
     // Untuk merender objek sesuai di tiled (flipped atau tidak)
     private static final int FLIP_HORIZONTAL = 0x80000000;
     private static final int FLIP_VERTICAL   = 0x40000000;
+
+    private static final float VIRTUAL_W = 320f / PPM;
+    private static final float VIRTUAL_H = 180f / PPM;
 
     // --- Y-sort ---
     private static class DrawEntry {
@@ -98,7 +105,7 @@ public class GameScreen implements Screen {
     @Override
     public void show() {
         camera = new OrthographicCamera();
-        camera.setToOrtho(false, Gdx.graphics.getWidth() / PPM, Gdx.graphics.getHeight() / PPM);
+        viewport = new FitViewport(VIRTUAL_W, VIRTUAL_H, camera);
 
         world = new World(new Vector2(0, 0), true);
         debugRenderer = new Box2DDebugRenderer();
@@ -115,7 +122,6 @@ public class GameScreen implements Screen {
 
         spawnPlayer();
 
-        camera.zoom = 0.25f;
         batch = new SpriteBatch();
     }
 
@@ -254,9 +260,7 @@ public class GameScreen implements Screen {
         polygon.setAsBox(
             size.x, size.y,
             new Vector2(
-                (rect.x / PPM) + size.x,
-                (rect.y / PPM) + size.y
-            ), 0f
+                (rect.x / PPM) + size.x, (rect.y / PPM) + size.y), 0f
         );
         return polygon;
     }
@@ -319,6 +323,8 @@ public class GameScreen implements Screen {
 
             playerPos = playerBody.getPosition();
             camera.position.lerp(new Vector3(playerPos.x,  playerPos.y, 0f), 0.1f);
+
+            viewport.apply();
 
         }
         camera.update();
@@ -417,9 +423,7 @@ public class GameScreen implements Screen {
 
     @Override
     public void resize(int width, int height) {
-        if (camera != null) {
-            camera.setToOrtho(false, width / PPM, height / PPM);
-        }
+        viewport.update(width, height, true);
     }
 
     @Override
