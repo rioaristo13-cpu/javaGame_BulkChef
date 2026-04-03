@@ -6,6 +6,7 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.ray3k.stripe.scenecomposer.SceneComposerStageBuilder;
@@ -13,6 +14,7 @@ import com.ray3k.stripe.scenecomposer.SceneComposerStageBuilder;
 public class MainMenuScreen implements Screen {
     private final BulkChef game;
     private Stage stage;
+    private boolean isStarting = false;
 
     public MainMenuScreen(BulkChef game) {
         this.game = game;
@@ -30,8 +32,14 @@ public class MainMenuScreen implements Screen {
         startButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
+                if (isStarting) return;
+
+                isStarting = true;
+                startButton.setDisabled(true);
+                startButton.setTouchable(Touchable.disabled);
+
                 System.out.println("Started");
-                game.setScreen(new GameScreen(game)); // switch screens
+                game.setScreen(new GameScreen(game));
             }
         });
 
