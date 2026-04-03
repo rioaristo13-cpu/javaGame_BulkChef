@@ -20,10 +20,16 @@ import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.*;
+import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.ray3k.stripe.scenecomposer.SceneComposerStageBuilder;
 
 
 import java.util.Comparator;
@@ -41,6 +47,7 @@ public class GameScreen implements Screen {
     private Body playerBody;
     private SpriteBatch batch ;
     private final BulkChef game;
+    private Stage stage;
     private boolean isPaused = false;
 
     // Tiled uses pixels, Box2D uses meters — scale down
@@ -123,6 +130,23 @@ public class GameScreen implements Screen {
         spawnPlayer();
 
         batch = new SpriteBatch();
+
+        stage = new Stage(new ScreenViewport());
+
+        SceneComposerStageBuilder builder = new
+        SceneComposerStageBuilder();
+        builder.build(stage, game.skin,
+            Gdx.files.internal("ui/pause/pausemenu.json"));
+
+        TextButton resumeButton = stage.getRoot().findActor("resume");
+
+        resumeButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                isPaused = false;
+                Gdx.input.setInputProcessor(null);
+            }
+        });
     }
 
     private void loadPropsLayer() {
@@ -313,6 +337,10 @@ public class GameScreen implements Screen {
 
             if (isPaused) {
                 playerBody.setLinearVelocity(0, 0);
+
+                Gdx.input.setInputProcessor(stage);
+            } else {
+                Gdx.input.setInputProcessor(null);
             }
         }
         Vector2 playerPos= playerBody.getPosition();
@@ -343,6 +371,12 @@ public class GameScreen implements Screen {
         if (isPaused && Gdx.input.isKeyJustPressed(Input.Keys.P)) {
             game.setScreen(new MainMenuScreen(game));
         }
+
+        if (isPaused) {
+            stage.act(delta);
+            stage.draw();
+        }
+
     }
 
     private void drawYSorted(Vector2 playerPos) {
