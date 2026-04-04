@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.0" orientation="orthogonal" renderorder="left-down" width="30" height="20" tilewidth="16" tileheight="16" infinite="0" nextlayerid="8" nextobjectid="47">
+<map version="1.10" tiledversion="1.12.0" orientation="orthogonal" renderorder="left-down" width="30" height="20" tilewidth="16" tileheight="16" infinite="0" nextlayerid="8" nextobjectid="95">
  <tileset firstgid="1" source="room.tsx"/>
  <tileset firstgid="392" source="objects.tsx"/>
  <layer id="1" name="ground" width="30" height="20" locked="1">
@@ -17,10 +17,10 @@
  </objectgroup>
  <objectgroup id="7" name="objects">
   <object id="35" gid="394" x="95.875" y="305.875" width="16" height="31"/>
-  <object id="41" name="bench" gid="2147484040" x="281.637" y="178.046" width="32" height="28"/>
-  <object id="42" name="treadmill" gid="2147484041" x="282.001" y="129.682" width="32" height="25"/>
-  <object id="45" name="treadmill_trigger" x="271.455" y="110.955" width="41.9091" height="22.2727"/>
-  <object id="46" name="bench_trigger" x="273.182" y="158.091" width="41.0909" height="22.6364"/>
+  <object id="41" name="bench" gid="2147484040" x="253.637" y="166.046" width="32" height="28"/>
+  <object id="42" name="treadmill" gid="2147484041" x="254.001" y="117.682" width="32" height="25"/>
+  <object id="45" name="treadmill_trigger" x="243.455" y="98.955" width="41.9091" height="22.2727"/>
+  <object id="46" name="bench_trigger" x="245.182" y="146.091" width="41.0909" height="22.6364"/>
  </objectgroup>
  <objectgroup id="5" name="collision">
   <object id="3" x="9.5" y="4.5" width="5.38889" height="272.5"/>
@@ -33,8 +33,8 @@
   <object id="11" x="89.5" y="273" width="5.625" height="47.0625"/>
   <object id="12" x="112.938" y="273.157" width="6" height="46.7813"/>
   <object id="20" x="88.9792" y="319.823" width="30.2917" height="1.39583"/>
-  <object id="43" x="283.202" y="116.469" width="29.5652" height="0.3859"/>
-  <object id="44" x="282.74" y="162.731" width="26.8179" height="0.427567"/>
+  <object id="43" x="255.202" y="104.469" width="29.5652" height="0.3859"/>
+  <object id="44" x="254.74" y="150.731" width="26.8179" height="0.427567"/>
  </objectgroup>
  <layer id="2" name="foreground" width="30" height="20" locked="1">
   <data encoding="base64" compression="zlib">
