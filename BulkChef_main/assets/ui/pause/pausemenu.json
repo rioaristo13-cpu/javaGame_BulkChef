@@ -7,10 +7,10 @@
 				"child": {
 					"class": "TextButton",
 					"name": "resume",
-					"text": "resume",
+					"text": "Resume",
 					"style": {
 						"clazz": "com.badlogic.gdx.scenes.scene2d.ui.TextButton",
-						"name": "pause-btn"
+						"name": "default"
 					},
 					"checked": false,
 					"disabled": false,
@@ -31,7 +31,7 @@
 				"spaceLeft": 0,
 				"spaceRight": 0,
 				"spaceTop": 0,
-				"spaceBottom": 0,
+				"spaceBottom": 10,
 				"expandX": false,
 				"expandY": false,
 				"fillX": false,
@@ -53,10 +53,10 @@
 				"child": {
 					"class": "TextButton",
 					"name": "quit",
-					"text": "quit",
+					"text": "Quit",
 					"style": {
 						"clazz": "com.badlogic.gdx.scenes.scene2d.ui.TextButton",
-						"name": "pause-btn"
+						"name": "default"
 					},
 					"checked": false,
 					"disabled": false,

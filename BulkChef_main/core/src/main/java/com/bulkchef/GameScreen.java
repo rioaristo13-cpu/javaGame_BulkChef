@@ -30,8 +30,6 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.ray3k.stripe.scenecomposer.SceneComposerStageBuilder;
-import com.sun.tools.javac.Main;
-
 
 import java.util.Comparator;
 
@@ -153,9 +151,6 @@ public class GameScreen implements Screen {
             quitButton.setProgrammaticChangeEvents(true);
             quitButton.clearActions();
         }
-
-        stage.setKeyboardFocus(resumeButton);
-        selectedIndex = 0;
 
         if (resumeButton != null) {
             resumeButton.addListener(new ChangeListener() {
@@ -368,10 +363,11 @@ public class GameScreen implements Screen {
             if (isPaused) {
                 playerBody.setLinearVelocity(0, 0);
                 Gdx.input.setInputProcessor(stage);
-                stage.setKeyboardFocus(resumeButton);
-                selectedIndex = 0;
+                selectedIndex = -1;
+                stage.setKeyboardFocus(null);
             } else {
                 Gdx.input.setInputProcessor(null);
+                stage.setKeyboardFocus(null);
             }
         }
         Vector2 playerPos = playerBody.getPosition();
@@ -399,19 +395,18 @@ public class GameScreen implements Screen {
         debugRenderer.render(world, camera.combined);
 
         if (isPaused) {
-            if (Gdx.input.isKeyJustPressed(Input.Keys.TAB)) {
-                selectedIndex = (selectedIndex + 1) % 2;
+            boolean navigateDown = Gdx.input.isKeyJustPressed(Input.Keys.S) || Gdx.input.isKeyJustPressed(Input.Keys.DOWN);
+            boolean navigateUp = Gdx.input.isKeyJustPressed(Input.Keys.W) || Gdx.input.isKeyJustPressed(Input.Keys.UP);
 
-                if (selectedIndex == 0) {
-                    stage.setKeyboardFocus(resumeButton);
-                    System.out.println("fokus ke resume");
-                } else {
-                    stage.setKeyboardFocus(quitButton);
-                    System.out.println("fokus ke quit");
-                }
+            if (navigateDown) {
+                selectedIndex = (selectedIndex + 1) % 2;
+                stage.setKeyboardFocus(selectedIndex == 0 ? resumeButton : quitButton);
+            } else if (navigateUp) {
+                selectedIndex = (selectedIndex - 1 + 2) % 2;
+                stage.setKeyboardFocus(selectedIndex == 0 ? resumeButton : quitButton);
             }
 
-            if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
+            if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)|| Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
                 Actor focused = stage.getKeyboardFocus();
 
                 if (focused == resumeButton) {

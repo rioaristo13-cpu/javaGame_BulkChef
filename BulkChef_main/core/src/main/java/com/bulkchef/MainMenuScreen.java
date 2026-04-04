@@ -18,7 +18,7 @@ public class MainMenuScreen implements Screen {
     private boolean isStarting = false;
     private TextButton startButton;
     private TextButton quitButton;
-    private int selectedIndex = 0;
+    private int selectedIndex = -1;
 
     public MainMenuScreen(BulkChef game) {
         this.game = game;
@@ -34,9 +34,6 @@ public class MainMenuScreen implements Screen {
 
         startButton = stage.getRoot().findActor("newgame");
         quitButton = stage.getRoot().findActor("quit");
-
-        stage.setKeyboardFocus(startButton);
-        selectedIndex = 0;
 
         if (startButton != null) {
             startButton.addListener(new ChangeListener() {
@@ -84,16 +81,18 @@ public class MainMenuScreen implements Screen {
     @Override
     public void render(float delta) {
         ScreenUtils.clear(0, 0, 0, 1);
+        boolean navDown = Gdx.input.isKeyJustPressed(Input.Keys.S)
+            || Gdx.input.isKeyJustPressed(Input.Keys.DOWN);
+        boolean navUp = Gdx.input.isKeyJustPressed(Input.Keys.W)
+            || Gdx.input.isKeyJustPressed(Input.Keys.UP);
 
-        if (Gdx.input.isKeyJustPressed(Input.Keys.TAB)) {
+        if (navDown) {
             selectedIndex = (selectedIndex + 1) % 2;
-
-            if (selectedIndex == 0) {
-            stage.setKeyboardFocus(startButton);
-        } else {
-            stage.setKeyboardFocus(quitButton);
+            stage.setKeyboardFocus(selectedIndex == 0 ? startButton : quitButton);
+        } else if (navUp) {
+            selectedIndex = (selectedIndex - 1 + 2) % 2;
+            stage.setKeyboardFocus(selectedIndex == 0 ? startButton : quitButton);
         }
-    }
 
     if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
         Actor focused = stage.getKeyboardFocus();
