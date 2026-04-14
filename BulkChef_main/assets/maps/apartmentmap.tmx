@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.0" orientation="orthogonal" renderorder="left-down" width="30" height="20" tilewidth="16" tileheight="16" infinite="0" nextlayerid="8" nextobjectid="95">
+<map version="1.10" tiledversion="1.12.0" orientation="orthogonal" renderorder="left-down" width="30" height="20" tilewidth="16" tileheight="16" infinite="0" nextlayerid="8" nextobjectid="101">
  <tileset firstgid="1" source="room.tsx"/>
  <tileset firstgid="392" source="objects.tsx"/>
  <layer id="1" name="ground" width="30" height="20" locked="1">
@@ -12,29 +12,37 @@
    eJyTZWBgcGXExAI4xKmB5YFm6wFxGCMmVsQhTg0MtPMAyN5TQHwaDYPspRWA2YsNKDEwOAyEve6MtLIVv70RQHtvD4C9oDg+MwD20hKM2ju47NUZIHupXXaN2jv87bVngFQ8yFgaKi8D5dtiUUMJdsTtHjAwINUjFAJ62AsA4Qwyyg==
   </data>
  </layer>
- <objectgroup id="6" name="player" locked="1">
-  <object id="19" name="playerSpawn" x="101.636" y="303.633" width="4" height="3"/>
+ <objectgroup id="6" name="player">
+  <object id="19" name="playerSpawn" x="289.261" y="147.8" width="4" height="3"/>
  </objectgroup>
  <objectgroup id="7" name="objects">
-  <object id="35" gid="394" x="95.875" y="305.875" width="16" height="31"/>
-  <object id="41" name="bench" gid="2147484040" x="253.637" y="166.046" width="32" height="28"/>
-  <object id="42" name="treadmill" gid="2147484041" x="254.001" y="117.682" width="32" height="25"/>
-  <object id="45" name="treadmill_trigger" x="243.455" y="98.955" width="41.9091" height="22.2727"/>
-  <object id="46" name="bench_trigger" x="245.182" y="146.091" width="41.0909" height="22.6364"/>
+  <object id="41" name="bench" gid="392" x="162.758" y="250.713" width="32" height="28"/>
+  <object id="42" name="treadmill" gid="393" x="162.394" y="202.349" width="32" height="25"/>
+  <object id="45" name="treadmill_trigger" x="163.03" y="183.622" width="41.9091" height="22.2727"/>
+  <object id="46" name="bench_trigger" x="162.122" y="230.758" width="41.0909" height="22.6364"/>
  </objectgroup>
  <objectgroup id="5" name="collision">
   <object id="3" x="9.5" y="4.5" width="5.38889" height="272.5"/>
   <object id="4" x="97.0109" y="4.20833" width="13.9308" height="75.7905"/>
   <object id="5" x="9.58333" y="0.0416667" width="461" height="15.9896"/>
   <object id="7" x="464.858" y="4.5625" width="5.01667" height="271.375"/>
-  <object id="8" x="113.434" y="273" width="357.067" height="5"/>
-  <object id="9" x="9" y="272.971" width="85.8438" height="5.02921"/>
+  <object id="8" x="118.382" y="273" width="352.119" height="5"/>
+  <object id="9" x="9" y="272.971" width="80.5313" height="5.02921"/>
   <object id="10" x="144.875" y="177" width="13.9063" height="95.9457"/>
-  <object id="11" x="89.5" y="272.973" width="5.49306" height="47.0892"/>
-  <object id="12" x="112.938" y="272.985" width="6" height="46.9532"/>
+  <object id="11" x="89.5" y="278.098" width="5.49306" height="41.9642"/>
+  <object id="12" x="113.006" y="277.947" width="5.93207" height="41.9912"/>
   <object id="20" x="88.9792" y="319.823" width="30.2917" height="1.39583"/>
-  <object id="43" x="255.202" y="104.469" width="29.5652" height="0.3859"/>
-  <object id="44" x="254.74" y="150.731" width="26.8179" height="0.427567"/>
+  <object id="43" x="163.627" y="189.136" width="29.7497" height="0.3859"/>
+  <object id="44" x="166.837" y="235.398" width="26.8179" height="0.427567"/>
+  <object id="98" x="62.0625" y="279.563">
+   <point/>
+  </object>
+  <object id="99" x="89.7986" y="272.978">
+   <polyline points="0,0 4.6875,0 5.25,0.5 5.25,5"/>
+  </object>
+  <object id="100" x="118.272" y="273.022">
+   <polyline points="0,0 -4.6875,0 -5.25,0.5 -5.25,5"/>
+  </object>
  </objectgroup>
  <layer id="2" name="foreground" width="30" height="20" locked="1">
   <data encoding="base64" compression="zlib">

@@ -82,7 +82,7 @@ public class MainMenuScreen implements Screen {
     public void render(float delta) {
         ScreenUtils.clear(0, 0, 0, 1);
         boolean navDown = Gdx.input.isKeyJustPressed(Input.Keys.S)
-            || Gdx.input.isKeyJustPressed(Input.Keys.DOWN);
+            || Gdx.input.isKeyJustPressed(Input.Keys.DOWN) || Gdx.input.isKeyJustPressed(Input.Keys.TAB);
         boolean navUp = Gdx.input.isKeyJustPressed(Input.Keys.W)
             || Gdx.input.isKeyJustPressed(Input.Keys.UP);
 
@@ -94,12 +94,14 @@ public class MainMenuScreen implements Screen {
             stage.setKeyboardFocus(selectedIndex == 0 ? startButton : quitButton);
         }
 
-    if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
+    if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
         Actor focused = stage.getKeyboardFocus();
 
         if (focused == startButton) {
+            System.out.println("Started");
             game.setScreen(new GameScreen(game));
         } else if (focused == quitButton) {
+            System.out.println("Quitting");
             Gdx.app.exit();
         }
     }

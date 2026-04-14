@@ -5,7 +5,9 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.maps.MapLayer;
 import com.badlogic.gdx.maps.MapObject;
 import com.badlogic.gdx.maps.objects.CircleMapObject;
@@ -40,7 +42,22 @@ public class GameScreen implements Screen {
     private OrthographicCamera camera;
     private Viewport viewport;
     private OrthogonalTiledMapRenderer mapRenderer;
-    private Texture playerTexture;
+
+    //Field field animasi
+    private Texture idleSheet;
+    private Texture runSheet;
+
+    private Animation<TextureRegion> idleDown, idleUp, idleLeft, idleRight;
+    private Animation<TextureRegion> runDown, runUp, runLeft, runRight;
+
+    private Animation<TextureRegion> currentAnimation;
+    private float animTime = 0f;
+
+    private enum Direction {
+        UP, DOWN, LEFT, RIGHT
+    }
+    private Direction facing = Direction.DOWN;
+
     private Texture benchTexture;
     private Texture treadmillTexture;
     private Body playerBody;
@@ -61,9 +78,8 @@ public class GameScreen implements Screen {
     private static final float TREADMILL_W = 32f / PPM;
     private static final float TREADMILL_H = 25f / PPM; // LIAT DARI TILED/ASEPRITE
 
-    // Besar karakter
-    private static final float PLAYER_W = 16f / PPM;
-    private static final float PLAYER_H = 31f / PPM;
+    // Untuk menaruh hitbox di kaki player
+    private static final float PLAYER_H = 32f / PPM;
 
     // Besar hitbox
     private static final float HITBOX_W = 16f / PPM;
@@ -80,18 +96,27 @@ public class GameScreen implements Screen {
     private static class DrawEntry {
         float x, y, w, h, footY;
         Texture texture;
+        TextureRegion region; //Animasi player
         boolean flipX, flipY;
 
         DrawEntry(float x, float y, float w, float h, Texture texture, boolean flipX, boolean flipY) {
-            this.x          = x;
-            this.y          = y;
-            this.w          = w;
-            this.h          = h;
-            this.footY      = y;
-            this.texture    = texture;
-            this.flipX      = flipX;
-            this.flipY      = flipY;
+            this.x       = x;
+            this.y       = y;
+            this.w       = w;
+            this.h       = h;
+            this.footY   = y;
+            this.texture = texture;
+            this.flipX   = flipX;
+            this.flipY   = flipY;
+        }
 
+        DrawEntry(float x, float y, float w, float h, TextureRegion region) {
+            this.x      = x;
+            this.y      = y;
+            this.w      = w;
+            this.h      = h;
+            this.footY  = y;
+            this.region = region;
         }
     }
 
@@ -125,7 +150,25 @@ public class GameScreen implements Screen {
         loadCollisionLayer();
         loadPropsLayer();
 
-        playerTexture = new Texture(Gdx.files.internal("objects/player.png"));
+        //Loading animasi player
+        idleSheet = new Texture(Gdx.files.internal("objects/character/idle_16x16.png"));
+        runSheet = new Texture(Gdx.files.internal("objects/character/run_16x16.png"));
+
+        int FRAME_W = 16, FRAME_H = 32, FRAMES = 6;
+        float IDLE_DUR = 0.15f, RUN_DUR = 0.1f;
+
+        idleRight   = createAnim(idleSheet, 0, FRAMES, FRAME_W, FRAME_H, IDLE_DUR);
+        idleUp      = createAnim(idleSheet, 6, FRAMES, FRAME_W, FRAME_H, IDLE_DUR);
+        idleLeft    = createAnim(idleSheet, 12, FRAMES, FRAME_W, FRAME_H, IDLE_DUR);
+        idleDown    = createAnim(idleSheet, 18, FRAMES, FRAME_W, FRAME_H, IDLE_DUR);
+
+        runRight    = createAnim(runSheet, 0, FRAMES, FRAME_W, FRAME_H, RUN_DUR);
+        runUp       = createAnim(runSheet, 6, FRAMES, FRAME_W, FRAME_H, RUN_DUR);
+        runLeft     = createAnim(runSheet, 12, FRAMES, FRAME_W, FRAME_H, RUN_DUR);
+        runDown     = createAnim(runSheet, 18, FRAMES, FRAME_W, FRAME_H, RUN_DUR);
+
+        currentAnimation = idleDown;
+
         benchTexture = new Texture(Gdx.files.internal("objects/bench.png"));
         treadmillTexture = new Texture(Gdx.files.internal("objects/treadmill.png"));
 
@@ -170,8 +213,14 @@ public class GameScreen implements Screen {
                 }
             });
         }
+    }
 
-
+    private Animation<TextureRegion> createAnim(Texture sheet, int colOffset, int frameCount, int frameW, int frameH, float frameDuration) {
+        TextureRegion[] frames = new TextureRegion[frameCount];
+        for (int i = 0; i < frameCount; i++) {
+            frames[i] = new TextureRegion(sheet, (colOffset + i) * frameW, 0, frameW, frameH);
+        }
+        return new Animation<>(frameDuration, frames);
     }
 
     private void loadPropsLayer() {
@@ -184,7 +233,7 @@ public class GameScreen implements Screen {
 
         for (MapObject object : propsLayer.getObjects()) {
             Integer rawGid = object.getProperties().get("gid", Integer.class);
-            if (rawGid == null) continue;
+            if (rawGid == null) continue;   
 
             String name = object.getName();
             if (name == null || name.isEmpty()) continue;
@@ -392,10 +441,11 @@ public class GameScreen implements Screen {
         drawYSorted(playerPos);
         batch.end();
 
+        //Render debug box kolisi
         debugRenderer.render(world, camera.combined);
 
         if (isPaused) {
-            boolean navigateDown = Gdx.input.isKeyJustPressed(Input.Keys.S) || Gdx.input.isKeyJustPressed(Input.Keys.DOWN);
+            boolean navigateDown = Gdx.input.isKeyJustPressed(Input.Keys.S) || Gdx.input.isKeyJustPressed(Input.Keys.DOWN) || Gdx.input.isKeyJustPressed(Input.Keys.TAB);
             boolean navigateUp = Gdx.input.isKeyJustPressed(Input.Keys.W) || Gdx.input.isKeyJustPressed(Input.Keys.UP);
 
             if (navigateDown) {
@@ -422,18 +472,19 @@ public class GameScreen implements Screen {
         }
     }
 
-
-
-
     private void drawYSorted(Vector2 playerPos) {
         drawList.clear();
 
         // Karakter
+        animTime += Gdx.graphics.getDeltaTime();
+        TextureRegion frame = currentAnimation.getKeyFrame(animTime, true);
+        float drawW = frame.getRegionWidth() / PPM;
+        float drawH = frame.getRegionHeight() / PPM;
         drawList.add(new DrawEntry(
-            playerPos.x - PLAYER_W / 2f,
-            playerPos.y - PLAYER_H / 2f,
-            PLAYER_W, PLAYER_H,
-            playerTexture, false, false
+           playerPos.x - drawW / 2f,
+           playerPos.y - drawH / 2f,
+           drawW, drawH,
+           frame
         ));
 
         // Benchpress
@@ -455,26 +506,24 @@ public class GameScreen implements Screen {
 
         for (int i = 0; i < drawList.size; i++) {
             DrawEntry e = drawList.get(i);
-            batch.draw(
-                e.texture,
-                e.x, e.y,                           // position
-                0, 0,                               // origin
-                e.w, e.h,                           // size
-                1f, 1f,                             // scale
-                0f,                                 // rotation
-                0, 0,                               // source x, y
-                e.texture.getWidth(), e.texture.getHeight(), // source w, h
-                e.flipX, e.flipY                    // flip flags
-            );
+            if  (e.region != null) {
+                // Animasi player
+                batch.draw(e.region, e.x, e.y, e.w, e.h);
+            } else {
+                // Objek
+                batch.draw(e.texture,
+                    e.x, e.y,
+                    0, 0,
+                    e.w,  e.h,
+                    1f, 1f,
+                    0f, 0, 0,
+                    e.texture.getWidth(), e.texture.getHeight(),
+                    e.flipX, e.flipY);
+            }
         }
     }
 
     private void handleInput() {
-//        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-//            game.setScreen(new MainMenuScreen(game));
-//            return; // stop processing input after switching screen
-//        }
-
         float speed = 4.2f;
         float vx = 0;
         float vy = 0;
@@ -499,6 +548,20 @@ public class GameScreen implements Screen {
         }
 
         playerBody.setLinearVelocity(vx, vy);
+
+        boolean isMoving = (vx != 0 || vy != 0);
+
+        if (vy > 0) facing = Direction.UP;
+        else if (vy < 0) facing = Direction.DOWN;
+        else if (vx > 0) facing = Direction.RIGHT;
+        else if (vx < 0) facing = Direction.LEFT;
+
+        switch(facing) {
+            case UP     : currentAnimation = isMoving ? runUp : idleUp; break;
+            case DOWN   : currentAnimation = isMoving ? runDown : idleDown; break;
+            case LEFT   : currentAnimation = isMoving ? runLeft : idleLeft; break;
+            case RIGHT  : currentAnimation = isMoving ? runRight : idleRight; break;
+        }
     }
 
     @Override
@@ -530,7 +593,8 @@ public class GameScreen implements Screen {
         map.dispose();
         world.dispose();
         debugRenderer.dispose();
-        playerTexture.dispose();
+        idleSheet.dispose();
+        runSheet.dispose();
         benchTexture.dispose();
         treadmillTexture.dispose();
         batch.dispose();
