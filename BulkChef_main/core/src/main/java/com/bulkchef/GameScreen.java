@@ -15,6 +15,7 @@ import com.badlogic.gdx.maps.objects.PolygonMapObject;
 import com.badlogic.gdx.maps.objects.PolylineMapObject;
 import com.badlogic.gdx.maps.objects.RectangleMapObject;
 import com.badlogic.gdx.maps.tiled.TiledMap;
+import com.badlogic.gdx.maps.tiled.TiledMapTile;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.badlogic.gdx.math.Circle;
@@ -72,12 +73,6 @@ public class GameScreen implements Screen {
     // Tiled uses pixels, Box2D uses meters — scale down
     private static final float PPM = 16f; // pixels per meter
 
-    // Besar objek di dunia / PPM
-    private static final float BENCH_W = 32f / PPM;
-    private static final float BENCH_H = 28f / PPM;
-    private static final float TREADMILL_W = 32f / PPM;
-    private static final float TREADMILL_H = 25f / PPM; // LIAT DARI TILED/ASEPRITE
-
     // Untuk menaruh hitbox di kaki player
     private static final float PLAYER_H = 32f / PPM;
 
@@ -92,23 +87,19 @@ public class GameScreen implements Screen {
     private static final float VIRTUAL_W = 320f / PPM;
     private static final float VIRTUAL_H = 180f / PPM;
 
+    private static class PropEntry {
+        float x, y, w, h;
+        TextureRegion region;
+        boolean flipX, flipY;
+    }
+    private final Array<PropEntry> props = new Array<>();
+
     // --- Y-sort ---
     private static class DrawEntry {
         float x, y, w, h, footY;
         Texture texture;
         TextureRegion region; //Animasi player
         boolean flipX, flipY;
-
-        DrawEntry(float x, float y, float w, float h, Texture texture, boolean flipX, boolean flipY) {
-            this.x       = x;
-            this.y       = y;
-            this.w       = w;
-            this.h       = h;
-            this.footY   = y;
-            this.texture = texture;
-            this.flipX   = flipX;
-            this.flipY   = flipY;
-        }
 
         DrawEntry(float x, float y, float w, float h, TextureRegion region) {
             this.x      = x;
@@ -126,11 +117,6 @@ public class GameScreen implements Screen {
     private static final Comparator<DrawEntry> Y_SORT_DESC =
         (a, b) -> Float.compare(b.footY, a.footY);
 
-    // Prop positions and flip flags — loaded from TMX
-    private float   benchX,     benchY;
-    private boolean benchFlipX, benchFlipY;
-    private float   treadmillX,     treadmillY;
-    private boolean treadmillFlipX, treadmillFlipY;
 
     public GameScreen(BulkChef game) {
         this.game = game;
@@ -224,40 +210,48 @@ public class GameScreen implements Screen {
     }
 
     private void loadPropsLayer() {
+        // The group layer
+        com.badlogic.gdx.maps.MapGroupLayer group =
+            (com.badlogic.gdx.maps.MapGroupLayer) map.getLayers().get("objects");
+        if (group == null) return;
 
-        MapLayer propsLayer = map.getLayers().get("objects");
-        if (propsLayer == null) {
-            Gdx.app.error("Map","No objects layers found");
-            return;
-        }
+        // Sub-layers with their offsets
+        String[] subLayerNames = {"gym", "bedroom", "kitchen", "livingroom"};
 
-        for (MapObject object : propsLayer.getObjects()) {
-            Integer rawGid = object.getProperties().get("gid", Integer.class);
-            if (rawGid == null) continue;   
+        for (String layerName : subLayerNames) {
+            MapLayer layer = group.getLayers().get(layerName);
+            if (layer == null) continue;
 
-            String name = object.getName();
-            if (name == null || name.isEmpty()) continue;
+            // Read the layer-level offset (gym has one!)
+            float layerOffsetX = layer.getRenderOffsetX() / PPM;
+            float layerOffsetY = layer.getRenderOffsetY() / PPM;
 
-            // Extract flip flags from the raw GID bits
-            boolean flipX = (rawGid & FLIP_HORIZONTAL) != 0;
-            boolean flipY = (rawGid & FLIP_VERTICAL)   != 0;
+            for (MapObject obj : layer.getObjects()) {
+                Integer rawGid = obj.getProperties().get("gid", Integer.class);
+                if (rawGid == null) continue;
 
-            float worldX = object.getProperties().get("x", Float.class) / PPM;
-            float worldY = object.getProperties().get("y", Float.class) / PPM;
+                int gid = rawGid & ~(FLIP_HORIZONTAL | FLIP_VERTICAL | 0x20000000);
+                boolean flipX = (rawGid & FLIP_HORIZONTAL) != 0;
+                boolean flipY = (rawGid & FLIP_VERTICAL) != 0;
 
-            switch (name) {
-                case "bench":
-                    benchX     = worldX;
-                    benchY     = worldY;
-                    benchFlipX = flipX;
-                    benchFlipY = flipY;
-                    break;
-                case "treadmill":
-                    treadmillX     = worldX;
-                    treadmillY     = worldY;
-                    treadmillFlipX = flipX;
-                    treadmillFlipY = flipY;
-                    break;
+                // Get the tile region from the map's tilesets
+                TiledMapTile tile = map.getTileSets().getTile(gid);
+                if (tile == null) continue;
+
+                float x = obj.getProperties().get("x", Float.class) / PPM + layerOffsetX;
+                // TMX Y is top-left in Tiled coords; Box2D Y is bottom-up
+                float h = obj.getProperties().get("height", Float.class) / PPM;
+                float rawY = obj.getProperties().get("y", Float.class) / PPM + layerOffsetY;
+                float y = rawY - h; // Tiled object Y is the bottom of the tile in screen space
+
+                float w = obj.getProperties().get("width", Float.class) / PPM;
+
+                PropEntry e = new PropEntry();
+                e.x = x; e.y = y; e.w = w; e.h = h;
+                e.region = tile.getTextureRegion();
+                e.flipX = flipX;
+                e.flipY = flipY;
+                props.add(e);
             }
         }
     }
@@ -475,48 +469,32 @@ public class GameScreen implements Screen {
     private void drawYSorted(Vector2 playerPos) {
         drawList.clear();
 
-        // Karakter
+        // Player frame (same as before)
         animTime += Gdx.graphics.getDeltaTime();
         TextureRegion frame = currentAnimation.getKeyFrame(animTime, true);
         float drawW = frame.getRegionWidth() / PPM;
         float drawH = frame.getRegionHeight() / PPM;
         drawList.add(new DrawEntry(
-           playerPos.x - drawW / 2f,
-           playerPos.y - drawH / 2f,
-           drawW, drawH,
-           frame
+            playerPos.x - drawW / 2f,
+            playerPos.y - drawH / 2f,
+            drawW, drawH, frame
         ));
 
-        // Benchpress
-        drawList.add(new DrawEntry(
-            benchX, benchY,
-            BENCH_W, BENCH_H,
-            benchTexture, benchFlipX, benchFlipY
-        ));
+        // All props from all rooms
+        for (PropEntry p : props) {
+            TextureRegion r = new TextureRegion(p.region);
+            r.flip(p.flipX, p.flipY);
+            drawList.add(new DrawEntry(p.x, p.y, p.w, p.h, r));
+        }
 
-        // Treadmill
-        drawList.add(new DrawEntry(
-            treadmillX, treadmillY,
-            TREADMILL_W, TREADMILL_H,
-            treadmillTexture, treadmillFlipX, treadmillFlipY
-        ));
-
-        // Disort
         drawList.sort(Y_SORT_DESC);
 
-        for (int i = 0; i < drawList.size; i++) {
-            DrawEntry e = drawList.get(i);
-            if  (e.region != null) {
-                // Animasi player
+        for (DrawEntry e : drawList) {
+            if (e.region != null) {
                 batch.draw(e.region, e.x, e.y, e.w, e.h);
             } else {
-                // Objek
-                batch.draw(e.texture,
-                    e.x, e.y,
-                    0, 0,
-                    e.w,  e.h,
-                    1f, 1f,
-                    0f, 0, 0,
+                batch.draw(e.texture, e.x, e.y, 0, 0, e.w, e.h,
+                    1f, 1f, 0f, 0, 0,
                     e.texture.getWidth(), e.texture.getHeight(),
                     e.flipX, e.flipY);
             }

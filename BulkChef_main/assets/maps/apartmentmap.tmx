@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.0" orientation="orthogonal" renderorder="left-down" width="30" height="20" tilewidth="16" tileheight="16" infinite="0" nextlayerid="8" nextobjectid="101">
+<map version="1.10" tiledversion="1.12.0" orientation="orthogonal" renderorder="left-down" width="30" height="20" tilewidth="16" tileheight="16" infinite="0" nextlayerid="16" nextobjectid="206">
  <tileset firstgid="1" source="room.tsx"/>
- <tileset firstgid="392" source="objects.tsx"/>
+ <tileset firstgid="392" source="gym.tsx"/>
+ <tileset firstgid="920" source="bedroom.tsx"/>
+ <tileset firstgid="2632" source="kitchen.tsx"/>
  <layer id="1" name="ground" width="30" height="20" locked="1">
   <data encoding="base64" compression="zlib">
    eJxjYBg4cAqIT6NhXOLUwDBwG4jvoOGBtBebODUwPntPD6C9ZwbAXlriUXtH7YWpGyh7qRkmo/aODHuxAULytAK3h6m9AO9QeFo=
@@ -15,12 +17,63 @@
  <objectgroup id="6" name="player">
   <object id="19" name="playerSpawn" x="289.261" y="147.8" width="4" height="3"/>
  </objectgroup>
- <objectgroup id="7" name="objects">
-  <object id="41" name="bench" gid="392" x="162.758" y="250.713" width="32" height="28"/>
-  <object id="42" name="treadmill" gid="393" x="162.394" y="202.349" width="32" height="25"/>
-  <object id="45" name="treadmill_trigger" x="163.03" y="183.622" width="41.9091" height="22.2727"/>
-  <object id="46" name="bench_trigger" x="162.122" y="230.758" width="41.0909" height="22.6364"/>
- </objectgroup>
+ <group id="15" name="objects" offsetx="4.75" offsety="2.25">
+  <objectgroup id="11" name="gym" offsetx="-99.9167" offsety="-5.83333">
+   <object id="112" gid="890" x="416" y="48" width="16" height="16"/>
+   <object id="113" gid="891" x="432" y="48" width="16" height="16"/>
+   <object id="114" gid="906" x="416" y="64" width="16" height="16"/>
+   <object id="115" gid="907" x="432" y="64" width="16" height="16"/>
+   <object id="116" gid="874" x="416" y="48" width="16" height="16"/>
+   <object id="117" gid="890" x="416" y="48" width="16" height="16"/>
+   <object id="118" gid="878" x="336" y="48" width="16" height="16"/>
+   <object id="119" gid="879" x="352" y="48" width="16" height="16"/>
+   <object id="120" gid="894" x="336" y="64" width="16" height="16"/>
+   <object id="121" gid="895" x="352" y="64" width="16" height="16"/>
+   <object id="129" gid="516" x="272" y="64" width="16" height="16"/>
+   <object id="130" gid="500" x="272" y="48" width="16" height="16"/>
+   <object id="132" gid="882" x="496" y="48" width="16" height="16"/>
+   <object id="133" gid="883" x="512" y="48" width="16" height="16"/>
+   <object id="136" gid="899" x="512" y="64" width="16" height="16"/>
+   <object id="137" gid="898" x="496" y="64" width="16" height="16"/>
+   <object id="138" gid="914" x="496" y="80" width="16" height="16"/>
+   <object id="139" gid="915" x="512" y="80" width="16" height="16"/>
+   <object id="140" gid="800" x="376" y="48.3333" width="16" height="16"/>
+   <object id="141" gid="801" x="392" y="48.3333" width="16" height="16"/>
+   <object id="142" gid="816" x="376" y="64.3333" width="16" height="16"/>
+   <object id="143" gid="817" x="392" y="64.3333" width="16" height="16"/>
+   <object id="144" gid="802" x="454" y="47.3333" width="16" height="16"/>
+   <object id="145" gid="803" x="470" y="47.3333" width="16" height="16"/>
+   <object id="146" gid="818" x="454" y="63.3333" width="16" height="16"/>
+   <object id="147" gid="819" x="470" y="63.3333" width="16" height="16"/>
+   <object id="148" gid="772" x="288" y="48" width="16" height="16"/>
+   <object id="149" gid="773" x="304" y="48" width="16" height="16"/>
+   <object id="150" gid="2147484097" x="308" y="65" width="16" height="16"/>
+   <object id="151" gid="2147484098" x="292" y="65" width="16" height="16"/>
+  </objectgroup>
+  <objectgroup id="12" name="bedroom">
+   <object id="166" gid="959" x="400" y="224" width="16" height="16"/>
+   <object id="167" gid="960" x="416" y="224" width="16" height="16"/>
+   <object id="168" gid="976" x="416" y="240" width="16" height="16"/>
+   <object id="169" gid="975" x="400" y="240" width="16" height="16"/>
+   <object id="170" gid="991" x="400" y="256" width="16" height="16"/>
+   <object id="171" gid="992" x="416" y="256" width="16" height="16"/>
+   <object id="178" gid="2108" x="368" y="240" width="16" height="16"/>
+   <object id="179" gid="2074" x="384" y="224" width="16" height="16"/>
+   <object id="180" gid="2058" x="384" y="208" width="16" height="16"/>
+   <object id="181" gid="2109" x="384" y="240" width="16" height="16"/>
+   <object id="193" gid="2092" x="368" y="224" width="16" height="16"/>
+  </objectgroup>
+  <objectgroup id="13" name="livingroom"/>
+  <objectgroup id="14" name="kitchen">
+   <object id="182" gid="2816" x="32" y="32" width="16" height="16"/>
+   <object id="183" gid="2832" x="32" y="48" width="16" height="16"/>
+   <object id="184" gid="2817" x="48" y="32" width="16" height="16"/>
+   <object id="185" gid="2833" x="48" y="48" width="16" height="16"/>
+   <object id="186" gid="3009" x="64" y="16" width="16" height="16"/>
+   <object id="187" gid="3025" x="64" y="32" width="16" height="16"/>
+   <object id="188" gid="3041" x="64" y="48" width="16" height="16"/>
+  </objectgroup>
+ </group>
  <objectgroup id="5" name="collision">
   <object id="3" x="9.5" y="4.5" width="5.38889" height="272.5"/>
   <object id="4" x="97.0109" y="4.20833" width="13.9308" height="75.7905"/>
@@ -32,8 +85,6 @@
   <object id="11" x="89.5" y="278.098" width="5.49306" height="41.9642"/>
   <object id="12" x="113.006" y="277.947" width="5.93207" height="41.9912"/>
   <object id="20" x="88.9792" y="319.823" width="30.2917" height="1.39583"/>
-  <object id="43" x="163.627" y="189.136" width="29.7497" height="0.3859"/>
-  <object id="44" x="166.837" y="235.398" width="26.8179" height="0.427567"/>
   <object id="98" x="62.0625" y="279.563">
    <point/>
   </object>
@@ -43,6 +94,18 @@
   <object id="100" x="118.272" y="273.022">
    <polyline points="0,0 -4.6875,0 -5.25,0.5 -5.25,5"/>
   </object>
+  <object id="194" x="36.9091" y="21.4545" width="47.2727" height="22.1818"/>
+  <object id="195" x="53.625" y="41.875" width="14.0625" height="6.25"/>
+  <object id="196" x="201.273" y="55.6364" width="22.3636" height="3.27273"/>
+  <object id="197" x="198.455" y="38.0909" width="19.3636" height="4.09091"/>
+  <object id="198" x="179.636" y="32.9091" width="9.63636" height="21.0909"/>
+  <object id="199" x="248.818" y="41.4545" width="15.8182" height="19.0909"/>
+  <object id="200" x="282.273" y="41.8182" width="30.1818" height="9.72727"/>
+  <object id="201" x="321.909" y="33" width="29.4545" height="27.1818"/>
+  <object id="202" x="360.182" y="40.1818" width="29.6364" height="10.2727"/>
+  <object id="203" x="406.909" y="43.8182" width="19" height="25.3636"/>
+  <object id="204" x="413.125" y="211.625" width="16.375" height="39"/>
+  <object id="205" x="374.25" y="220.125" width="29" height="12.875"/>
  </objectgroup>
  <layer id="2" name="foreground" width="30" height="20" locked="1">
   <data encoding="base64" compression="zlib">
