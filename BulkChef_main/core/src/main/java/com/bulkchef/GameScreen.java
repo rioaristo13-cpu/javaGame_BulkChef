@@ -239,12 +239,9 @@ public class GameScreen implements Screen {
                 if (tile == null) continue;
 
                 float x = obj.getProperties().get("x", Float.class) / PPM + layerOffsetX;
-                // TMX Y is top-left in Tiled coords; Box2D Y is bottom-up
+                float w = obj.getProperties().get("width",  Float.class) / PPM;
                 float h = obj.getProperties().get("height", Float.class) / PPM;
-                float rawY = obj.getProperties().get("y", Float.class) / PPM + layerOffsetY;
-                float y = rawY - h; // Tiled object Y is the bottom of the tile in screen space
-
-                float w = obj.getProperties().get("width", Float.class) / PPM;
+                float y = obj.getProperties().get("y",      Float.class) / PPM + layerOffsetY;
 
                 PropEntry e = new PropEntry();
                 e.x = x; e.y = y; e.w = w; e.h = h;
