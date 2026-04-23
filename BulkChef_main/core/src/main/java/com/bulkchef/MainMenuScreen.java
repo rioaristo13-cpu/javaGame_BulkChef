@@ -35,24 +35,6 @@ public class MainMenuScreen implements Screen {
         startButton = stage.getRoot().findActor("newgame");
         quitButton = stage.getRoot().findActor("quit");
 
-        if (startButton != null) {
-            startButton.addListener(new ChangeListener() {
-                @Override
-                public void changed(ChangeEvent event, Actor actor) {
-                    game.setScreen(new GameScreen(game));
-                }
-            });
-        }
-
-        if (quitButton != null) {
-            quitButton.addListener(new ChangeListener() {
-                @Override
-                public void changed(ChangeEvent event, Actor actor) {
-                    Gdx.app.exit();
-                }
-            });
-        }
-
         TextButton startButton = stage.getRoot().findActor("newgame");
         startButton.addListener(new ChangeListener() {
             @Override
@@ -89,12 +71,18 @@ public class MainMenuScreen implements Screen {
         if (navDown) {
             selectedIndex = (selectedIndex + 1) % 2;
             stage.setKeyboardFocus(selectedIndex == 0 ? startButton : quitButton);
+            game.sfxNavigate.play(game.sfxVolume);
         } else if (navUp) {
             selectedIndex = (selectedIndex - 1 + 2) % 2;
             stage.setKeyboardFocus(selectedIndex == 0 ? startButton : quitButton);
+            game.sfxNavigate.play(game.sfxVolume);
         }
 
-    if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
+    if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) ||
+        Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
+
+        game.sfxEnter.play(game.sfxVolume);
+
         Actor focused = stage.getKeyboardFocus();
 
         if (focused == startButton) {
