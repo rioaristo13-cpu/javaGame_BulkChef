@@ -286,7 +286,28 @@ text-field
   orig: 204, 62
   offset: 0, 0
   index: -1
+white-pixel
+  rotate: false
+  xy: 1053, 1987
+  size: 1, 1
+  orig: 1, 1
+  offset: 0, 0
+  index: -1
 white
+  rotate: false
+  xy: 1053, 1987
+  size: 1, 1
+  orig: 1, 1
+  offset: 0, 0
+  index: -1
+white
+  rotate: false
+  xy: 1053, 1987
+  size: 1, 1
+  orig: 1, 1
+  offset: 0, 0
+  index: -1
+white-pixel
   rotate: false
   xy: 1053, 1987
   size: 1, 1

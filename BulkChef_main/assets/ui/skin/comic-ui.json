@@ -54,6 +54,10 @@
 			"b": 1,
 			"a": 1
 		}
+	},
+	"background_bg": {
+		"name": "white-pixel",
+		"color": "black"
 	}
 },
 "com.badlogic.gdx.scenes.scene2d.ui.Button$ButtonStyle": {
@@ -97,7 +101,7 @@
 	},
 	"big": {
 		"font": "button",
-		"fontColor": "black"
+		"fontColor": "white"
 	},
 	"title": {
 		"font": "title",
@@ -202,6 +206,7 @@
 		"fontColor": "black",
 		"downFontColor": "black",
 		"overFontColor": "kuning",
+		"focusedFontColor": "kuning",
 		"up": "button",
 		"down": "button-pressed",
 		"over": "button-highlighted"
@@ -212,6 +217,27 @@
 		"downFontColor": "gray",
 		"overFontColor": "kuning",
 		"focusedFontColor": "kuning",
+		"up": "button",
+		"down": "button-pressed",
+		"over": "button-highlighted",
+		"focused": "button-highlighted"
+	},
+	"option-btn": {
+		"font": "button",
+		"fontColor": "black",
+		"downFontColor": "black",
+		"overFontColor": "kuning",
+		"focusedFontColor": "kuning",
+		"up": "button",
+		"down": "button-pressed",
+		"over": "button-highlighted",
+		"focused": "button-highlighted"
+	},
+	"Quit-btn": {
+		"font": "button",
+		"fontColor": "black",
+		"downFontColor": "black",
+		"overFontColor": "kuning",
 		"up": "button",
 		"down": "button-pressed",
 		"over": "button-highlighted",
