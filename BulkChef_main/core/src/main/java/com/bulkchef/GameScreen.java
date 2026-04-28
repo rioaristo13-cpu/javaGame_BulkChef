@@ -2,6 +2,7 @@ package com.bulkchef;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -27,6 +28,7 @@ import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Slider;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
@@ -41,6 +43,13 @@ import com.ray3k.stripe.scenecomposer.SceneComposerStageBuilder;
 import java.util.Comparator;
 
 public class GameScreen implements Screen {
+    //UI
+    private final PlayerStats stats = new PlayerStats();
+    private Stage hudStage;
+    private Label caloriesLabel, energyLabel, upperLabel, lowerLabel, totalLabel;
+    private Table phoneMenu;
+    private boolean phoneOpen = false;
+
     private TiledMap map;
     private World world;
     private Box2DDebugRenderer debugRenderer;
@@ -261,7 +270,7 @@ public class GameScreen implements Screen {
                 public void changed(ChangeEvent changeEvent, Actor actor) {
                     isPaused = false;
                     inOptionMenu = false;
-                    Gdx.input.setInputProcessor(null);
+                    Gdx.input.setInputProcessor(new InputMultiplexer(hudStage));
                     stage.setKeyboardFocus(null);
                 }
             });
@@ -299,8 +308,67 @@ public class GameScreen implements Screen {
                 }
             });
         }
-
         game.bgm.play();
+        buildHud();
+        InputMultiplexer multiplexer = new InputMultiplexer(hudStage);
+        Gdx.input.setInputProcessor(multiplexer);
+    }
+
+    private void buildHud() {
+        hudStage = new Stage(new ScreenViewport());
+
+        // Root table fills screen
+        Table root = new Table();
+        root.setFillParent(true);
+        root.pad(8f);
+        hudStage.addActor(root);
+
+        // ── Top-left: Calories & Energy ──────────────────────
+        Table topLeft = new Table();
+        caloriesLabel = new Label("Calories: 2000", game.skin);
+        energyLabel   = new Label("Energy: 100",   game.skin);
+        topLeft.add(caloriesLabel).left().row();
+        topLeft.add(energyLabel).left();
+
+        // ── Top-right: Muscle stats ───────────────────────────
+        Table topRight = new Table();
+        upperLabel = new Label("Upper: 0", game.skin);
+        lowerLabel = new Label("Lower: 0", game.skin);
+        topRight.add(upperLabel).right().row();
+        topRight.add(lowerLabel).right();
+
+        // ── Lay out top row ───────────────────────────────────
+        root.add(topLeft).top().left().expandX();
+        root.add(topRight).top().right().expandX();
+        root.row();
+
+        // ── Middle spacer ────────────────────────────────────
+        root.add().expand().colspan(2).row();
+
+        // ── Bottom-right: Phone button ────────────────────────
+        TextButton phoneBtn = new TextButton("[Phone]", game.skin); // swap for ImageButton later
+        phoneBtn.addListener(new ChangeListener() {
+            @Override public void changed(ChangeEvent e, Actor a) {
+                phoneOpen = !phoneOpen;
+                phoneMenu.setVisible(phoneOpen);
+            }
+        });
+        root.add().left(); // empty left cell
+        root.add(phoneBtn).bottom().right();
+
+        // ── Phone menu overlay ────────────────────────────────
+        phoneMenu = new Table(game.skin);
+        phoneMenu.setBackground("window");            // use whatever skin drawable you have
+        phoneMenu.setSize(160, 120);
+        phoneMenu.setPosition(
+            Gdx.graphics.getWidth()  - 170,
+            Gdx.graphics.getHeight() - 200   // anchors above phone button
+        );
+        totalLabel = new Label("Total Muscle: 0", game.skin);
+        phoneMenu.add(new Label("── Stats ──", game.skin)).pad(8).row();
+        phoneMenu.add(totalLabel).pad(4);
+        phoneMenu.setVisible(false);
+        hudStage.addActor(phoneMenu);
     }
 
     private void openOptionMenu() {
@@ -371,21 +439,22 @@ public class GameScreen implements Screen {
     }
 
     private void loadPropsLayer() {
-        // The group layer
         com.badlogic.gdx.maps.MapGroupLayer group =
             (com.badlogic.gdx.maps.MapGroupLayer) map.getLayers().get("objects");
         if (group == null) return;
 
-        // Sub-layers with their offsets
         String[] subLayerNames = {"gym", "bedroom", "kitchen", "livingroom"};
 
         for (String layerName : subLayerNames) {
             MapLayer layer = group.getLayers().get(layerName);
             if (layer == null) continue;
 
-            // Read the layer-level offset (gym has one!)
-            float layerOffsetX = layer.getRenderOffsetX() / PPM;
-            float layerOffsetY = layer.getRenderOffsetY() / PPM;
+            // getRenderOffsetX/Y() is already cumulative (group + sublayer)
+            // offsetX: add normally
+            // offsetY: SUBTRACT because it's in Tiled's Y-down space,
+            //          but rawY is already flipped to Y-up by LibGDX
+            float offsetX = layer.getRenderOffsetX() / PPM;
+            float offsetY = layer.getRenderOffsetY() / PPM;
 
             for (MapObject obj : layer.getObjects()) {
                 Integer rawGid = obj.getProperties().get("gid", Integer.class);
@@ -395,14 +464,16 @@ public class GameScreen implements Screen {
                 boolean flipX = (rawGid & FLIP_HORIZONTAL) != 0;
                 boolean flipY = (rawGid & FLIP_VERTICAL) != 0;
 
-                // Get the tile region from the map's tilesets
                 TiledMapTile tile = map.getTileSets().getTile(gid);
                 if (tile == null) continue;
 
-                float x = obj.getProperties().get("x", Float.class) / PPM + layerOffsetX;
-                float w = obj.getProperties().get("width",  Float.class) / PPM;
-                float h = obj.getProperties().get("height", Float.class) / PPM;
-                float y = obj.getProperties().get("y",      Float.class) / PPM + layerOffsetY;
+                float rawX = obj.getProperties().get("x",      Float.class) / PPM;
+                float rawY = obj.getProperties().get("y",      Float.class) / PPM;
+                float w    = obj.getProperties().get("width",  Float.class) / PPM;
+                float h    = obj.getProperties().get("height", Float.class) / PPM;
+
+                float x = rawX + offsetX;
+                float y = rawY - offsetY; // subtract! offsetY is Y-down, rawY is Y-up
 
                 PropEntry e = new PropEntry();
                 e.x = x; e.y = y; e.w = w; e.h = h;
@@ -564,7 +635,7 @@ public class GameScreen implements Screen {
                 isPaused = true;
                 inOptionMenu = false;
                 playerBody.setLinearVelocity(0, 0);
-                Gdx.input.setInputProcessor(stage);
+                Gdx.input.setInputProcessor(new InputMultiplexer(stage, hudStage));
                 selectedIndex = 0;
 
                 if (menuGroup != null) {
@@ -586,7 +657,7 @@ public class GameScreen implements Screen {
                     closeOptionMenu();
                 } else {
                     isPaused = false;
-                    Gdx.input.setInputProcessor(null);
+                    Gdx.input.setInputProcessor(new  InputMultiplexer(hudStage));
                     stage.setKeyboardFocus(null);
                 }
             }
@@ -707,22 +778,21 @@ public class GameScreen implements Screen {
             stage.act(0f);
             stage.draw();
         }
+        updateHud();
+        hudStage.act(delta);
+        hudStage.draw();
+    }
+
+    private void updateHud() {
+        caloriesLabel.setText("Calories: " + (int) stats.cal);
+        energyLabel  .setText("Energy: "   + (int) stats.energy);
+        upperLabel   .setText("Upper: "    + (int) stats.upperMuscle);
+        lowerLabel   .setText("Lower: "    + (int) stats.lowerMuscle);
+        totalLabel   .setText("Total Muscle: " + (int) stats.totalMuscle());
     }
 
     private void drawYSorted(Vector2 playerPos) {
         drawList.clear();
-
-        // Player frame (same as before)
-        animTime += Gdx.graphics.getDeltaTime();
-        TextureRegion frame = currentAnimation.getKeyFrame(animTime, true);
-        float drawW = frame.getRegionWidth() / PPM;
-        float drawH = frame.getRegionHeight() / PPM;
-        drawList.add(new DrawEntry(
-            playerPos.x - drawW / 2f,
-            playerPos.y - drawH / 2f,
-            drawW, drawH, frame
-        ));
-
         // All props from all rooms
         for (PropEntry p : props) {
             TextureRegion r = new TextureRegion(p.region);
@@ -742,6 +812,15 @@ public class GameScreen implements Screen {
                     e.flipX, e.flipY);
             }
         }
+        // Player frame (same as before)
+        animTime += Gdx.graphics.getDeltaTime();
+        TextureRegion frame = currentAnimation.getKeyFrame(animTime, true);
+        float drawW = frame.getRegionWidth() / PPM;
+        float drawH = frame.getRegionHeight() / PPM;
+        batch.draw(frame,
+            playerPos.x - drawW / 2f,
+            playerPos.y - drawH / 2f,
+            drawW, drawH);
     }
 
     private void handleInput() {
@@ -796,7 +875,6 @@ public class GameScreen implements Screen {
         if (playerBody != null) {
             playerBody.setLinearVelocity(0, 0);
         }
-
     }
 
     @Override
