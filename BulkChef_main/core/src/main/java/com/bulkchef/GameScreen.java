@@ -3,6 +3,7 @@ package com.bulkchef;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
@@ -25,6 +26,9 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.Touchable;
+import com.badlogic.gdx.scenes.scene2d.ui.Slider;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.Array;
@@ -66,9 +70,21 @@ public class GameScreen implements Screen {
     private final BulkChef game;
     private Stage stage;
     private boolean isPaused = false;
+    private boolean inOptionMenu = false;
+
+    private Slider musicSlider;
+    private Slider sfxSlider;
+
     private TextButton resumeButton;
     private TextButton quitButton;
+    private TextButton optionButton;
+    private TextButton backButton;
+
+    private Table menuGroup;
+    private Table optionGroup;
+
     private int selectedIndex = 0;
+    private int optionSelectedIndex = 0;
 
     // Tiled uses pixels, Box2D uses meters — scale down
     private static final float PPM = 16f; // pixels per meter
@@ -165,39 +181,184 @@ public class GameScreen implements Screen {
         stage = new Stage(new ScreenViewport());
 
         SceneComposerStageBuilder builder = new SceneComposerStageBuilder();
-        builder.build(stage, game.skin, Gdx.files.internal("ui/pause/pausemenu.json"));
+        builder.build(stage, game.skin, Gdx.files.internal("ui/pause/pausemenu2.json"));
+
+        Table rootTable = stage.getRoot().findActor("root");
+        if (rootTable != null) {
+            rootTable.setFillParent(true);
+        }
+
+        menuGroup = stage.getRoot().findActor("menugroup");
+        optionGroup = stage.getRoot().findActor("optiongroup");
+        backButton = stage.getRoot().findActor("backbtn");
+
+        resumeButton = stage.getRoot().findActor("resumebtn");
+        optionButton = stage.getRoot().findActor("optionbtn");
+        quitButton = stage.getRoot().findActor("quitbtn");
+
+        musicSlider = stage.getRoot().findActor("slidermusik");
+
+        if (musicSlider != null) {
+            musicSlider.setValue(game.bgm.getVolume() * 100);
+            musicSlider.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
+                    game.bgm.setVolume(musicSlider.getValue() / 100f);
+                }
+            });
+        }
+
+        sfxSlider = stage.getRoot().findActor("sfxslider");
+
+        if (sfxSlider != null) {
+            sfxSlider.setValue(game.sfxVolume * 100f);
+            sfxSlider.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
+                    game.sfxVolume = sfxSlider.getValue() / 100f;
+                }
+            });
+        }
+
+        if (menuGroup != null) {
+            menuGroup.setVisible(true);
+            menuGroup.setTouchable(Touchable.enabled);
+            menuGroup.setFillParent(true);
+            menuGroup.center();
+        }
+
+        if (optionGroup != null) {
+            optionGroup.setVisible(false);
+            optionGroup.setTouchable(Touchable.disabled);
+            optionGroup.setFillParent(true);
+            optionGroup.center();
+        }
 
 
-        resumeButton = stage.getRoot().findActor("resume");
-        quitButton = stage.getRoot().findActor("quit");
+        com.badlogic.gdx.scenes.scene2d.Actor labelmusik = stage.getRoot().findActor("labelmusik");
+        com.badlogic.gdx.scenes.scene2d.Actor labelsfx = stage.getRoot().findActor("labelsfx");
+
+        if (labelmusik != null) {
+            labelmusik.setColor(Color.WHITE);
+        }
+
+        if (labelsfx != null) {
+            labelsfx.setColor((Color.WHITE));
+        }
+        if (musicSlider != null) {
+            musicSlider.setTouchable(Touchable.enabled);
+        }
+
+        if (sfxSlider != null) {
+            sfxSlider.setTouchable(Touchable.enabled);
+        }
 
         if (resumeButton != null) {
             resumeButton.setProgrammaticChangeEvents(true);
             resumeButton.clearActions();
+            resumeButton.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent changeEvent, Actor actor) {
+                    isPaused = false;
+                    inOptionMenu = false;
+                    Gdx.input.setInputProcessor(null);
+                    stage.setKeyboardFocus(null);
+                }
+            });
+        }
+
+        if (optionButton != null) {
+            optionButton.setProgrammaticChangeEvents(true);
+            optionButton.clearActions();
+            optionButton.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent changeEvent, Actor actor) {
+                    openOptionMenu();
+                }
+            });
         }
 
         if (quitButton != null) {
             quitButton.setProgrammaticChangeEvents(true);
             quitButton.clearActions();
-        }
-
-        if (resumeButton != null) {
-            resumeButton.addListener(new ChangeListener() {
-                @Override
-                public void changed(ChangeEvent event, Actor actor) {
-                    isPaused = false;
-                    Gdx.input.setInputProcessor(null);
-                }
-            });
-        }
-
-        if (quitButton != null) {
             quitButton.addListener(new ChangeListener() {
                 @Override
-                public void changed(ChangeEvent event, Actor actor) {
+                public void changed(ChangeEvent changeEvent, Actor actor) {
                     game.setScreen(new MainMenuScreen(game));
                 }
             });
+        }
+
+        if (backButton != null) {
+            backButton.setProgrammaticChangeEvents(true);
+            backButton.clearActions();
+            backButton.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent changeEvent, Actor actor) {
+                    closeOptionMenu();
+                }
+            });
+        }
+
+        game.bgm.play();
+    }
+
+    private void openOptionMenu() {
+        inOptionMenu = true;
+        optionSelectedIndex = 0;
+
+        if (menuGroup != null) {
+            menuGroup.setVisible(false);
+            menuGroup.setTouchable(Touchable.disabled);
+        }
+
+        if (optionGroup != null) {
+            optionGroup.setVisible(true);
+            optionGroup.setTouchable(Touchable.enabled);
+            optionGroup.setFillParent(true);
+            optionGroup.center();
+        }
+
+        if (musicSlider != null) {
+            stage.setKeyboardFocus(musicSlider);
+        } else if (backButton != null) {
+            stage.setKeyboardFocus(backButton);
+        }
+
+    }
+
+    private void closeOptionMenu() {
+        inOptionMenu = false;
+        selectedIndex = 1;
+
+        if (menuGroup != null) {
+            menuGroup.setVisible(true);
+            menuGroup.setTouchable(Touchable.enabled);
+        }
+
+        if (optionGroup != null) {
+            optionGroup.setVisible(false);
+            optionGroup.setTouchable(Touchable.disabled);
+        }
+
+        if (optionGroup != null) {
+            stage.setKeyboardFocus(optionButton);
+        }
+    }
+
+    private void updateOptionFocus() {
+        if (optionSelectedIndex == 0) {
+            if (musicSlider != null) {
+                stage.setKeyboardFocus(musicSlider);
+            }
+        } else if (optionSelectedIndex == 1) {
+            if (sfxSlider != null) {
+                stage.setKeyboardFocus(sfxSlider);
+            }
+        } else {
+            if (backButton != null) {
+                stage.setKeyboardFocus(backButton);
+            }
         }
     }
 
@@ -397,19 +558,40 @@ public class GameScreen implements Screen {
     @Override
     public void render(float delta) {
         ScreenUtils.clear(0, 0, 0, 1);
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            isPaused = !isPaused;
 
-            if (isPaused) {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            if (!isPaused) {
+                isPaused = true;
+                inOptionMenu = false;
                 playerBody.setLinearVelocity(0, 0);
                 Gdx.input.setInputProcessor(stage);
-                selectedIndex = -1;
-                stage.setKeyboardFocus(null);
+                selectedIndex = 0;
+
+                if (menuGroup != null) {
+                    menuGroup.setVisible(true);
+                    menuGroup.setTouchable(Touchable.enabled);
+                }
+
+                if (optionGroup != null) {
+                    optionGroup.setVisible(false);
+                    optionGroup.setTouchable(Touchable.disabled);
+                }
+
+                if (resumeButton != null) {
+                    stage.setKeyboardFocus(resumeButton);
+                }
+
             } else {
-                Gdx.input.setInputProcessor(null);
-                stage.setKeyboardFocus(null);
+                if (inOptionMenu) {
+                    closeOptionMenu();
+                } else {
+                    isPaused = false;
+                    Gdx.input.setInputProcessor(null);
+                    stage.setKeyboardFocus(null);
+                }
             }
         }
+
         Vector2 playerPos = playerBody.getPosition();
 
         if (!isPaused) {
@@ -436,28 +618,92 @@ public class GameScreen implements Screen {
         debugRenderer.render(world, camera.combined);
 
         if (isPaused) {
-            boolean navigateDown = Gdx.input.isKeyJustPressed(Input.Keys.S) || Gdx.input.isKeyJustPressed(Input.Keys.DOWN) || Gdx.input.isKeyJustPressed(Input.Keys.TAB);
-            boolean navigateUp = Gdx.input.isKeyJustPressed(Input.Keys.W) || Gdx.input.isKeyJustPressed(Input.Keys.UP);
+            if (!inOptionMenu) {
+                boolean navigateDown =
+                    Gdx.input.isKeyJustPressed(Input.Keys.S) ||
+                        Gdx.input.isKeyJustPressed(Input.Keys.DOWN) ||
+                        Gdx.input.isKeyJustPressed(Input.Keys.TAB);
 
-            if (navigateDown) {
-                selectedIndex = (selectedIndex + 1) % 2;
-                stage.setKeyboardFocus(selectedIndex == 0 ? resumeButton : quitButton);
-            } else if (navigateUp) {
-                selectedIndex = (selectedIndex - 1 + 2) % 2;
-                stage.setKeyboardFocus(selectedIndex == 0 ? resumeButton : quitButton);
-            }
+                boolean navigateUp =
+                    Gdx.input.isKeyJustPressed(Input.Keys.W) ||
+                        Gdx.input.isKeyJustPressed(Input.Keys.UP);
 
-            if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)|| Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
-                Actor focused = stage.getKeyboardFocus();
+                if (navigateDown) {
+                    selectedIndex = (selectedIndex + 1) % 3;
+                    game.sfxNavigate.play(game.sfxVolume);
+                } else if (navigateUp) {
+                    selectedIndex = (selectedIndex - 1 + 3) % 3;
+                    game.sfxNavigate.play(game.sfxVolume);
+                }
 
-                if (focused == resumeButton) {
-                    isPaused = false;
-                    Gdx.input.setInputProcessor(null);
-                } else if (focused == quitButton) {
-                    game.setScreen(new MainMenuScreen(game));
+                if (selectedIndex == 0) {
+                    stage.setKeyboardFocus(resumeButton);
+                } else if (selectedIndex == 1) {
+                    stage.setKeyboardFocus(optionButton);
+                } else {
+                    stage.setKeyboardFocus(quitButton);
+                }
+
+                if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) ||
+                    Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
+
+                    game.sfxEnter.play(0.8f);
+
+                    Actor focused = stage.getKeyboardFocus();
+
+                    if (focused == resumeButton) {
+                        isPaused = false;
+                        Gdx.input.setInputProcessor(null);
+                        stage.setKeyboardFocus(null);
+                    } else if (focused == optionButton) {
+                        openOptionMenu();
+                    } else if (focused == quitButton) {
+                        game.setScreen(new MainMenuScreen(game));
+                    }
+                }
+            } else {
+                boolean navigateDown =
+                    Gdx.input.isKeyJustPressed(Input.Keys.S) ||
+                        Gdx.input.isKeyJustPressed(Input.Keys.DOWN) ||
+                        Gdx.input.isKeyJustPressed(Input.Keys.TAB);
+
+                boolean navigateUp =
+                    Gdx.input.isKeyJustPressed(Input.Keys.W) ||
+                        Gdx.input.isKeyJustPressed(Input.Keys.UP);
+
+                if (navigateDown) {
+                    optionSelectedIndex = (optionSelectedIndex + 1) % 3;
+                    game.sfxNavigate.play(game.sfxVolume);
+                } else if (navigateUp) {
+                    optionSelectedIndex = (optionSelectedIndex - 1 +3) % 3;
+                    game.sfxNavigate.play(game.sfxVolume);
+                }
+
+                updateOptionFocus();
+
+                if (optionSelectedIndex == 0 && musicSlider != null) {
+                    if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT)) {
+                        musicSlider.setValue((musicSlider.getValue() - musicSlider.getStepSize()));
+                    }
+
+                    if  (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT)) {
+                        musicSlider.setValue(musicSlider.getValue() + musicSlider.getStepSize());
+                    }
+                } else if (optionSelectedIndex == 1 && sfxSlider != null) {
+                    if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT)) {
+                        sfxSlider.setValue(sfxSlider.getValue() - sfxSlider.getStepSize());
+                    }
+
+                    if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT)) {
+                        sfxSlider.setValue(sfxSlider.getValue() + sfxSlider.getStepSize());
+                    }
+                } else if (optionSelectedIndex == 2) {
+                    if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) ||
+                        Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
+                        closeOptionMenu();
+                    }
                 }
             }
-
             stage.act(0f);
             stage.draw();
         }
@@ -561,6 +807,7 @@ public class GameScreen implements Screen {
     @Override
     public void hide() {
         Gdx.input.setInputProcessor(null);
+        game.bgm.stop();
     }
 
     @Override
