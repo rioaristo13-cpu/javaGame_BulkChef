@@ -85,9 +85,6 @@
   <object id="11" x="89.5" y="278.098" width="5.49306" height="41.9642"/>
   <object id="12" x="113.006" y="277.947" width="5.93207" height="41.9912"/>
   <object id="20" x="88.9792" y="319.823" width="30.2917" height="1.39583"/>
-  <object id="98" x="62.0625" y="279.563">
-   <point/>
-  </object>
   <object id="99" x="89.7986" y="272.978">
    <polyline points="0,0 4.6875,0 5.25,0.5 5.25,5"/>
   </object>
@@ -105,7 +102,7 @@
   <object id="203" x="407.091" y="30.6364" width="19" height="18.9886"/>
   <object id="204" x="444.58" y="216.352" width="16.375" height="39"/>
   <object id="205" x="406.432" y="217.182" width="29" height="1.59375"/>
-  <object id="206" x="353" y="192.909" width="13.9091" height="28.6122"/>
+  <object id="206" x="353" y="193" width="13.9091" height="28.5213"/>
   <object id="207" x="366.909" y="193" width="98" height="14.0909"/>
   <object id="208" x="353" y="256.957" width="13.913" height="16.4783"/>
  </objectgroup>

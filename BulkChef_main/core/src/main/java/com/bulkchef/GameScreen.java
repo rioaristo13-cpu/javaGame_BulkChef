@@ -25,9 +25,7 @@ import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.*;
-import com.badlogic.gdx.scenes.scene2d.Actor;
-import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.Touchable;
+import com.badlogic.gdx.scenes.scene2d.*;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Slider;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
@@ -35,9 +33,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
-import com.badlogic.gdx.utils.viewport.FitViewport;
-import com.badlogic.gdx.utils.viewport.ScreenViewport;
-import com.badlogic.gdx.utils.viewport.Viewport;
+import com.badlogic.gdx.utils.viewport.*;
 import com.ray3k.stripe.scenecomposer.SceneComposerStageBuilder;
 
 import java.util.Comparator;
@@ -199,11 +195,18 @@ public class GameScreen implements Screen {
 
         menuGroup = stage.getRoot().findActor("menugroup");
         optionGroup = stage.getRoot().findActor("optiongroup");
+
         backButton = stage.getRoot().findActor("backbtn");
+        if (backButton    != null) addHoverSound(backButton);
 
         resumeButton = stage.getRoot().findActor("resumebtn");
+        if (resumeButton != null) addHoverSound(resumeButton);
+
         optionButton = stage.getRoot().findActor("optionbtn");
+        if (optionButton  != null) addHoverSound(optionButton);
+
         quitButton = stage.getRoot().findActor("quitbtn");
+        if (quitButton    != null) addHoverSound(quitButton);
 
         musicSlider = stage.getRoot().findActor("slidermusik");
 
@@ -268,6 +271,7 @@ public class GameScreen implements Screen {
             resumeButton.addListener(new ChangeListener() {
                 @Override
                 public void changed(ChangeEvent changeEvent, Actor actor) {
+                    game.sfxEnter.play(game.sfxVolume);
                     isPaused = false;
                     inOptionMenu = false;
                     Gdx.input.setInputProcessor(new InputMultiplexer(hudStage));
@@ -282,6 +286,7 @@ public class GameScreen implements Screen {
             optionButton.addListener(new ChangeListener() {
                 @Override
                 public void changed(ChangeEvent changeEvent, Actor actor) {
+                    game.sfxEnter.play(game.sfxVolume);
                     openOptionMenu();
                 }
             });
@@ -293,6 +298,7 @@ public class GameScreen implements Screen {
             quitButton.addListener(new ChangeListener() {
                 @Override
                 public void changed(ChangeEvent changeEvent, Actor actor) {
+                    game.sfxEnter.play(game.sfxVolume);
                     game.setScreen(new MainMenuScreen(game));
                 }
             });
@@ -304,6 +310,7 @@ public class GameScreen implements Screen {
             backButton.addListener(new ChangeListener() {
                 @Override
                 public void changed(ChangeEvent changeEvent, Actor actor) {
+                    game.sfxEnter.play(game.sfxVolume);
                     closeOptionMenu();
                 }
             });
@@ -789,6 +796,18 @@ public class GameScreen implements Screen {
         upperLabel   .setText("Upper: "    + (int) stats.upperMuscle);
         lowerLabel   .setText("Lower: "    + (int) stats.lowerMuscle);
         totalLabel   .setText("Total Muscle: " + (int) stats.totalMuscle());
+    }
+
+    //suara kursor untuk menu
+    private void addHoverSound(Actor actor) {
+        actor.addListener(new InputListener() {
+            @Override
+            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                if (pointer == -1) {
+                    game.sfxNavigate.play(game.sfxVolume);
+                }
+            }
+        });
     }
 
     private void drawYSorted(Vector2 playerPos) {
