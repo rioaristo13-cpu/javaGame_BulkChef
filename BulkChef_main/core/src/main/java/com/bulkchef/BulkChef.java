@@ -17,7 +17,6 @@ public class BulkChef extends Game {
     @Override
     public void create() {
         skin = new Skin(Gdx.files.internal("ui/skin/comic-ui.json"));
-        setScreen(new MainMenuScreen(this));
 
         bgm = Gdx.audio.newMusic(Gdx.files.internal("audio/bgm.mp3"));
         bgm.setLooping(true);

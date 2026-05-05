@@ -20,6 +20,7 @@ public class MainMenuScreen implements Screen {
     private boolean isStarting = false;
     private TextButton startButton;
     private TextButton quitButton;
+    private TextButton continueButton;
     private int selectedIndex = -1;
     private float quitTimer = -1f;
 
@@ -37,6 +38,10 @@ public class MainMenuScreen implements Screen {
 
         // Assign to class fields only — no redundant local TextButton declarations
         startButton = stage.getRoot().findActor("newgame");
+        continueButton = stage.getRoot().findActor("continue");
+        if (SaveData.load() == null) {
+            continueButton.setDisabled(true);
+        }
         quitButton  = stage.getRoot().findActor("quit");
 
         startButton.addListener(new ChangeListener() {
@@ -59,9 +64,20 @@ public class MainMenuScreen implements Screen {
             }
         });
 
+        continueButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                SaveData save = SaveData.load();
+                if (save == null) return;
+                game.sfxEnter.play(game.sfxVolume);
+                game.setScreen(new GameScreen(game, save));
+            }
+        });
+
         // Hover sounds
         addHoverSound(startButton);
         addHoverSound(quitButton);
+        addHoverSound(continueButton);
     }
 
     private void addHoverSound(Actor actor) {
@@ -93,12 +109,20 @@ public class MainMenuScreen implements Screen {
             || Gdx.input.isKeyJustPressed(Input.Keys.UP);
 
         if (navDown) {
-            selectedIndex = (selectedIndex + 1) % 2;
-            stage.setKeyboardFocus(selectedIndex == 0 ? startButton : quitButton);
+            selectedIndex = (selectedIndex + 1) % 3;
+            Actor focused;
+            if (selectedIndex == 0) focused = startButton;
+            else if (selectedIndex == 1) focused = continueButton;
+            else focused = quitButton;
+            stage.setKeyboardFocus(focused);
             game.sfxNavigate.play(game.sfxVolume);
         } else if (navUp) {
-            selectedIndex = (selectedIndex - 1 + 2) % 2;
-            stage.setKeyboardFocus(selectedIndex == 0 ? startButton : quitButton);
+            selectedIndex = (selectedIndex - 1 + 2) % 3;
+            Actor focused;
+            if (selectedIndex == 0) focused = startButton;
+            else if (selectedIndex == 1) focused = continueButton;
+            else focused = quitButton;
+            stage.setKeyboardFocus(focused);
             game.sfxNavigate.play(game.sfxVolume);
         }
 
@@ -111,12 +135,14 @@ public class MainMenuScreen implements Screen {
 
             if (focused == startButton) {
                 game.setScreen(new GameScreen(game));
+            } else if (focused == continueButton) {
+                SaveData save = SaveData.load();
+                if (save != null) game.setScreen(new GameScreen(game, save));
             } else if (focused == quitButton) {
                 game.sfxEnter.play(game.sfxVolume);
                 quitTimer = 0f;
             }
         }
-
         stage.act(delta);
         stage.draw();
     }

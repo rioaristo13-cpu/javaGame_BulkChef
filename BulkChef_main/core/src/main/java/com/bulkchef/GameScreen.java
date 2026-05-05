@@ -35,16 +35,20 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.*;
 import com.ray3k.stripe.scenecomposer.SceneComposerStageBuilder;
+import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.maps.objects.EllipseMapObject;
 
 import java.util.Comparator;
 
 public class GameScreen implements Screen {
+    private final java.util.Map<String, Interaction> interactions = new java.util.HashMap<>();
+
     //UI
     private final PlayerStats stats = new PlayerStats();
     private Stage hudStage;
     private Label caloriesLabel, energyLabel, upperLabel, lowerLabel, totalLabel;
-    private Table phoneMenu;
-    private boolean phoneOpen = false;
 
     private TiledMap map;
     private World world;
@@ -52,6 +56,8 @@ public class GameScreen implements Screen {
     private OrthographicCamera camera;
     private Viewport viewport;
     private OrthogonalTiledMapRenderer mapRenderer;
+    private ShapeRenderer shapeRenderer;
+    private TextButton promptLabel;
 
     //Field field animasi
     private Texture idleSheet;
@@ -139,12 +145,24 @@ public class GameScreen implements Screen {
         (a, b) -> Float.compare(b.footY, a.footY);
 
 
-    public GameScreen(BulkChef game) {
+    private final SaveData saveData;
+    public GameScreen(BulkChef game) { this(game, null); }
+    public GameScreen(BulkChef game, SaveData saveData) {
         this.game = game;
+        this.saveData = saveData;
     }
 
     @Override
     public void show() {
+
+        //Load savefile
+        if (saveData != null) {
+            stats.cal = saveData.cal;
+            stats.energy = saveData.energy;
+            stats.upperMuscle = saveData.upperMuscle;
+            stats.lowerMuscle = saveData.lowerMuscle;
+        }
+
         camera = new OrthographicCamera();
         viewport = new FitViewport(VIRTUAL_W, VIRTUAL_H, camera);
 
@@ -155,6 +173,12 @@ public class GameScreen implements Screen {
         mapRenderer = new OrthogonalTiledMapRenderer(map, 1f / PPM);
 
         loadCollisionLayer();
+        loadInteractionLayer();
+        interactions.put("treadmill",  new Interaction("Run",  Interaction.Type.EX_LOWER, 0, 0, 0,  15f, 20f));
+        interactions.put("benchpress", new Interaction("Bench",       Interaction.Type.EX_UPPER, 0, 0, 20f, 0,  25f));
+        interactions.put("cycling",    new Interaction("Ride",         Interaction.Type.EX_LOWER, 0, 0, 0,  12f, 18f));
+        interactions.put("dumbell",    new Interaction("Lift",    Interaction.Type.EX_UPPER, 0, 0, 18f, 0,  22f));
+        interactions.put("kitchen",    new Interaction("Cook",        Interaction.Type.FOOD,    500f, 30f, 0, 0, 0f));
         loadPropsLayer();
 
         //Loading animasi player
@@ -182,6 +206,7 @@ public class GameScreen implements Screen {
         spawnPlayer();
 
         batch = new SpriteBatch();
+        shapeRenderer = new ShapeRenderer();
 
         stage = new Stage(new ScreenViewport());
 
@@ -299,6 +324,7 @@ public class GameScreen implements Screen {
                 @Override
                 public void changed(ChangeEvent changeEvent, Actor actor) {
                     game.sfxEnter.play(game.sfxVolume);
+                    SaveData.save(stats, playerBody.getPosition().x, playerBody.getPosition().y);
                     game.setScreen(new MainMenuScreen(game));
                 }
             });
@@ -321,6 +347,29 @@ public class GameScreen implements Screen {
         Gdx.input.setInputProcessor(multiplexer);
     }
 
+    private void loadInteractionLayer() {
+        MapLayer layer = map.getLayers().get("interaction");
+        if (layer == null) return;
+        for (MapObject obj : layer.getObjects()) {
+            if (obj instanceof EllipseMapObject) {
+                com.badlogic.gdx.math.Ellipse e = ((EllipseMapObject) obj).getEllipse();
+                float cx = (e.x + e.width  / 2f) / PPM;    // center, not top-left
+                float cy = (e.y + e.height / 2f) / PPM;
+                float r  = (e.width / 2f) / PPM;
+                String type = obj.getName();
+                interactionZones.add(new InteractionZone(cx, cy, r, type));
+            }
+        }
+    }
+    private static class InteractionZone {
+        float x, y, radius;
+        String type;
+        InteractionZone(float x, float y, float r, String type) {
+            this.x = x; this.y = y; this.radius = r; this.type = type;
+        }
+    }
+    private final Array<InteractionZone> interactionZones = new Array<>();
+
     private void buildHud() {
         hudStage = new Stage(new ScreenViewport());
 
@@ -332,50 +381,34 @@ public class GameScreen implements Screen {
 
         // ── Top-left: Calories & Energy ──────────────────────
         Table topLeft = new Table();
-        caloriesLabel = new Label("Calories: 2000", game.skin);
-        energyLabel   = new Label("Energy: 100",   game.skin);
+        caloriesLabel = new Label("Calories: ", game.skin, "big");
+        energyLabel   = new Label("Energy: ",   game.skin, "big");
         topLeft.add(caloriesLabel).left().row();
         topLeft.add(energyLabel).left();
 
+        // ── Top-center: Total Muscle ──────────────────────────
+        totalLabel = new Label("Total Muscle: ", game.skin, "big");
+
         // ── Top-right: Muscle stats ───────────────────────────
         Table topRight = new Table();
-        upperLabel = new Label("Upper: 0", game.skin);
-        lowerLabel = new Label("Lower: 0", game.skin);
+        upperLabel = new Label("Upper: ", game.skin, "big");
+        lowerLabel = new Label("Lower: ", game.skin, "big");
         topRight.add(upperLabel).right().row();
         topRight.add(lowerLabel).right();
 
         // ── Lay out top row ───────────────────────────────────
         root.add(topLeft).top().left().expandX();
+        root.add(totalLabel).top().center().expandX();
         root.add(topRight).top().right().expandX();
         root.row();
 
         // ── Middle spacer ────────────────────────────────────
-        root.add().expand().colspan(2).row();
+        root.add().expand().colspan(3);
 
-        // ── Bottom-right: Phone button ────────────────────────
-        TextButton phoneBtn = new TextButton("[Phone]", game.skin); // swap for ImageButton later
-        phoneBtn.addListener(new ChangeListener() {
-            @Override public void changed(ChangeEvent e, Actor a) {
-                phoneOpen = !phoneOpen;
-                phoneMenu.setVisible(phoneOpen);
-            }
-        });
-        root.add().left(); // empty left cell
-        root.add(phoneBtn).bottom().right();
-
-        // ── Phone menu overlay ────────────────────────────────
-        phoneMenu = new Table(game.skin);
-        phoneMenu.setBackground("window");            // use whatever skin drawable you have
-        phoneMenu.setSize(160, 120);
-        phoneMenu.setPosition(
-            Gdx.graphics.getWidth()  - 170,
-            Gdx.graphics.getHeight() - 200   // anchors above phone button
-        );
-        totalLabel = new Label("Total Muscle: 0", game.skin);
-        phoneMenu.add(new Label("── Stats ──", game.skin)).pad(8).row();
-        phoneMenu.add(totalLabel).pad(4);
-        phoneMenu.setVisible(false);
-        hudStage.addActor(phoneMenu);
+        promptLabel = new TextButton("E", game.skin);
+        promptLabel.setVisible(false);
+        promptLabel.setTouchable(Touchable.disabled);
+        hudStage.addActor(promptLabel);
     }
 
     private void openOptionMenu() {
@@ -499,7 +532,10 @@ public class GameScreen implements Screen {
 
         if (spawnLayer != null) {
             MapObject spawnObject = spawnLayer.getObjects().get("playerSpawn");
-            if (spawnObject != null) {
+            if (saveData != null) {
+                spawnX = saveData.posX;
+                spawnY = saveData.posY;
+            } else if (spawnObject != null) {
                 spawnX = spawnObject.getProperties().get("x", Float.class) / PPM;
                 spawnY = spawnObject.getProperties().get("y", Float.class) / PPM;
             }
@@ -638,6 +674,7 @@ public class GameScreen implements Screen {
         ScreenUtils.clear(0, 0, 0, 1);
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            game.sfxNavigate.play(game.sfxVolume);
             if (!isPaused) {
                 isPaused = true;
                 inOptionMenu = false;
@@ -687,13 +724,40 @@ public class GameScreen implements Screen {
         mapRenderer.setView(camera);
         mapRenderer.render();
 
+        // Draw interaction zone circles
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        shapeRenderer.setProjectionMatrix(camera.combined);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        shapeRenderer.setColor(1f, 1f, 0f, 1f);
+        for (InteractionZone zone : interactionZones) {
+            shapeRenderer.circle(zone.x, zone.y, zone.radius, 32);
+        }
+        shapeRenderer.end();
+
         batch.setProjectionMatrix(camera.combined);
         batch.begin();
         drawYSorted(playerPos);
         batch.end();
 
         //Render debug box kolisi
-        debugRenderer.render(world, camera.combined);
+        //debugRenderer.render(world, camera.combined);
+
+        // E prompt above player
+        Vector2 pPos = playerBody.getPosition();
+        boolean nearZone = false;
+        for (InteractionZone zone : interactionZones) {
+            float dx = pPos.x - zone.x;
+            float dy = pPos.y - zone.y;
+            if (dx*dx + dy*dy <= zone.radius * zone.radius) {
+                nearZone = true;
+                break;
+            }
+        }
+        promptLabel.setVisible(nearZone);
+        if (nearZone) {
+            Vector3 screenPos = camera.project(new Vector3(pPos.x, pPos.y + PLAYER_H, 0));
+            promptLabel.setPosition(screenPos.x - promptLabel.getWidth() / 2f, screenPos.y);
+        }
 
         if (isPaused) {
             if (!inOptionMenu) {
@@ -736,6 +800,7 @@ public class GameScreen implements Screen {
                     } else if (focused == optionButton) {
                         openOptionMenu();
                     } else if (focused == quitButton) {
+                        SaveData.save(stats, playerBody.getPosition().x, playerBody.getPosition().y);
                         game.setScreen(new MainMenuScreen(game));
                     }
                 }
@@ -785,9 +850,11 @@ public class GameScreen implements Screen {
             stage.act(0f);
             stage.draw();
         }
-        updateHud();
-        hudStage.act(delta);
-        hudStage.draw();
+        if (!isPaused) {
+            updateHud();
+            hudStage.act(delta);
+            hudStage.draw();
+        }
     }
 
     private void updateHud() {
@@ -881,6 +948,35 @@ public class GameScreen implements Screen {
             case LEFT   : currentAnimation = isMoving ? runLeft : idleLeft; break;
             case RIGHT  : currentAnimation = isMoving ? runRight : idleRight; break;
         }
+
+        if (Gdx.input.isKeyJustPressed(Input.Keys.E)) {
+            Vector2 pos = playerBody.getPosition();
+            for (InteractionZone zone : interactionZones) {
+                float dx = pos.x - zone.x;
+                float dy = pos.y - zone.y;
+                if (dx*dx + dy*dy <= zone.radius * zone.radius) {
+                    handleInteraction(zone.type);
+                    break;
+                }
+            }
+        }
+    }
+
+    private void handleInteraction(String type) {
+        Interaction action = interactions.get(type);
+        if (action == null) return;
+
+        if (action.type == Interaction.Type.FOOD) {
+            stats.addCalories(action.calDelta);
+            stats.addEnergy(action.energyDelta);
+        } else {
+            // Exercise zones: require energy, consume calories, build muscle
+            if (stats.isTired()) return; // optional: block if exhausted
+            stats.addEnergy(-action.energyCost);
+            stats.addCalories(action.calDelta);        // usually 0 for exercises
+            stats.addUpperMuscle(action.upperDelta);
+            stats.addLowerMuscle(action.lowerDelta);
+        }
     }
 
     @Override
@@ -918,5 +1014,6 @@ public class GameScreen implements Screen {
         treadmillTexture.dispose();
         batch.dispose();
         mapRenderer.dispose();
+        shapeRenderer.dispose();
     }
 }
