@@ -58,6 +58,15 @@
 	"background_bg": {
 		"name": "white-pixel",
 		"color": "black"
+	},
+	"panel_bg": {
+		"name": "white-pixel",
+		"color": {
+			"r": 0.15,
+			"g": 0.15,
+			"b": 0.15,
+			"a": 0.9
+		}
 	}
 },
 "com.badlogic.gdx.scenes.scene2d.ui.Button$ButtonStyle": {
