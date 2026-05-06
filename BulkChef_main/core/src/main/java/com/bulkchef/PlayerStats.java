@@ -4,6 +4,8 @@ public class PlayerStats {
     public static final float MAX_CAL = 3000f;
     public static final float MAX_ENERGY = 100f;
 
+    public int daysRemaining = 7;
+
     public void addCalories(float amount) {
         cal = Math.max(0, Math.min(cal + amount, MAX_CAL));
     }

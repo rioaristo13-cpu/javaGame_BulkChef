@@ -26,10 +26,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.scenes.scene2d.*;
-import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.scenes.scene2d.ui.Slider;
-import com.badlogic.gdx.scenes.scene2d.ui.Table;
-import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
@@ -37,18 +34,29 @@ import com.badlogic.gdx.utils.viewport.*;
 import com.ray3k.stripe.scenecomposer.SceneComposerStageBuilder;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.maps.objects.EllipseMapObject;
 
 import java.util.Comparator;
 
 public class GameScreen implements Screen {
+
+    // Layar waktu tidur
+    private boolean showSleepScreen = false;
+    private float sleepAlpha = 0f;
+    private enum SleepPhase {FADE_IN, HOLD, FADE_OUT}
+    private SleepPhase sleepPhase = SleepPhase.FADE_IN;
+
+    // Zona interaksi di map
     private final java.util.Map<String, Interaction> interactions = new java.util.HashMap<>();
 
+    //Tekstur ikon UI
+    private Image iconCalories, iconEnergy, iconUpper, iconLower, iconTotal;
+
     //UI
+    private Table hudRoot;
     private final PlayerStats stats = new PlayerStats();
     private Stage hudStage;
-    private Label caloriesLabel, energyLabel, upperLabel, lowerLabel, totalLabel;
+    private Label caloriesLabel, energyLabel, upperLabel, lowerLabel, totalLabel, sleepLabel;
 
     private TiledMap map;
     private World world;
@@ -74,8 +82,9 @@ public class GameScreen implements Screen {
     }
     private Direction facing = Direction.DOWN;
 
-    private Texture benchTexture;
-    private Texture treadmillTexture;
+    //Load field tekstur
+    private Texture benchTexture, treadmillTexture, icoCal, icoEnergy, icoUpper, icoLower, icoTotal;
+
     private Body playerBody;
     private SpriteBatch batch ;
     private final BulkChef game;
@@ -161,6 +170,7 @@ public class GameScreen implements Screen {
             stats.energy = saveData.energy;
             stats.upperMuscle = saveData.upperMuscle;
             stats.lowerMuscle = saveData.lowerMuscle;
+            stats.daysRemaining = saveData.daysRemaining;
         }
 
         camera = new OrthographicCamera();
@@ -179,6 +189,7 @@ public class GameScreen implements Screen {
         interactions.put("cycling",    new Interaction("Ride",         Interaction.Type.EX_LOWER, 0, 0, 0,  12f, 18f));
         interactions.put("dumbell",    new Interaction("Lift",    Interaction.Type.EX_UPPER, 0, 0, 18f, 0,  22f));
         interactions.put("kitchen",    new Interaction("Cook",        Interaction.Type.FOOD,    500f, 30f, 0, 0, 0f));
+        interactions.put("bed", new Interaction("Sleep", Interaction.Type.REST, 0, 0, 0, 0, 0));
         loadPropsLayer();
 
         //Loading animasi player
@@ -202,6 +213,17 @@ public class GameScreen implements Screen {
 
         benchTexture = new Texture(Gdx.files.internal("objects/bench.png"));
         treadmillTexture = new Texture(Gdx.files.internal("objects/treadmill.png"));
+        icoCal    = new Texture(Gdx.files.internal("ui/icons/icon_calories.png"));
+        icoEnergy = new Texture(Gdx.files.internal("ui/icons/icon_energy.png"));
+        icoUpper  = new Texture(Gdx.files.internal("ui/icons/icon_upper.png"));
+        icoLower  = new Texture(Gdx.files.internal("ui/icons/icon_lower.png"));
+        icoTotal  = new Texture(Gdx.files.internal("ui/icons/icon_total.png"));
+
+        iconCalories = new Image(icoCal);
+        iconEnergy   = new Image(icoEnergy);
+        iconUpper    = new Image(icoUpper);
+        iconLower    = new Image(icoLower);
+        iconTotal    = new Image(icoTotal);
 
         spawnPlayer();
 
@@ -372,19 +394,28 @@ public class GameScreen implements Screen {
 
     private void buildHud() {
         hudStage = new Stage(new ScreenViewport());
+        sleepLabel = new Label("", game.skin, "big");
+        sleepLabel.setVisible(false);
+        sleepLabel.setFillParent(true);
+        sleepLabel.setAlignment(com.badlogic.gdx.utils.Align.center);
+        hudStage.addActor(sleepLabel);
+
 
         // Root table fills screen
-        Table root = new Table();
-        root.setFillParent(true);
-        root.pad(8f);
-        hudStage.addActor(root);
+        hudRoot = new Table();
+        hudRoot.setFillParent(true);
+        hudRoot.pad(8f);
+        hudStage.addActor(hudRoot);
 
         // ── Top-left: Calories & Energy ──────────────────────
         Table topLeft = new Table();
         caloriesLabel = new Label("Calories: ", game.skin, "big");
         energyLabel   = new Label("Energy: ",   game.skin, "big");
+        topLeft.add(iconCalories).size(32, 32).padRight(4);
         topLeft.add(caloriesLabel).left().row();
+        topLeft.add(iconEnergy).size(32, 32).padRight(4);
         topLeft.add(energyLabel).left();
+
 
         // ── Top-center: Total Muscle ──────────────────────────
         totalLabel = new Label("Total Muscle: ", game.skin, "big");
@@ -393,17 +424,22 @@ public class GameScreen implements Screen {
         Table topRight = new Table();
         upperLabel = new Label("Upper: ", game.skin, "big");
         lowerLabel = new Label("Lower: ", game.skin, "big");
+        topRight.add(iconUpper).size(32, 32).padRight(4);
         topRight.add(upperLabel).right().row();
+        topRight.add(iconLower).size(32, 32).padRight(4);
         topRight.add(lowerLabel).right();
 
         // ── Lay out top row ───────────────────────────────────
-        root.add(topLeft).top().left().expandX();
-        root.add(totalLabel).top().center().expandX();
-        root.add(topRight).top().right().expandX();
-        root.row();
+        hudRoot.add(topLeft).top().left().expandX();
+        Table topCenter = new Table();
+        topCenter.add(iconTotal).size(32, 32).padRight(4);
+        topCenter.add(totalLabel);
+        hudRoot.add(topCenter).top().center().expandX();
+        hudRoot.add(topRight).top().right().expandX();
+        hudRoot.row();
 
         // ── Middle spacer ────────────────────────────────────
-        root.add().expand().colspan(3);
+        hudRoot.add().expand().colspan(3);
 
         promptLabel = new TextButton("E", game.skin);
         promptLabel.setVisible(false);
@@ -739,6 +775,43 @@ public class GameScreen implements Screen {
         drawYSorted(playerPos);
         batch.end();
 
+        if (showSleepScreen) {
+            float speed = 0.8f;
+            if (sleepPhase == SleepPhase.FADE_IN) {
+                sleepAlpha = Math.min(1f, sleepAlpha + delta * speed);
+                if (sleepAlpha >= 1f) sleepPhase = SleepPhase.HOLD;
+            } else if (sleepPhase == SleepPhase.HOLD) {
+                sleepAlpha = 1f;
+                // Wait for any key to begin fade out
+                if (Gdx.input.isKeyJustPressed(Input.Keys.ANY_KEY) ||
+                    Gdx.input.isKeyJustPressed(Input.Keys.E)) {
+                    sleepPhase = SleepPhase.FADE_OUT;
+                }
+            } else {
+                sleepAlpha = Math.max(0f, sleepAlpha - delta * speed);
+                if (sleepAlpha <= 0f) {
+                    showSleepScreen = false;
+                    isPaused = false;
+                    sleepLabel.setVisible(false);
+                    hudRoot.setVisible(true);   // add this
+                }
+            }
+
+            // Draw black overlay
+            Gdx.gl.glEnable(GL20.GL_BLEND);
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+            shapeRenderer.setColor(0, 0, 0, sleepAlpha);
+            shapeRenderer.rect(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+            shapeRenderer.end();
+
+            // Draw text using hudStage's batch
+            sleepLabel.setText(stats.daysRemaining + " days remaining");
+            sleepLabel.setVisible(true);
+            sleepLabel.getColor().a = sleepAlpha;
+            hudStage.act(0);
+            hudStage.draw();
+        }
+
         //Render debug box kolisi
         //debugRenderer.render(world, camera.combined);
 
@@ -753,13 +826,13 @@ public class GameScreen implements Screen {
                 break;
             }
         }
-        promptLabel.setVisible(nearZone);
+        promptLabel.setVisible(nearZone && !showSleepScreen);
         if (nearZone) {
             Vector3 screenPos = camera.project(new Vector3(pPos.x, pPos.y + PLAYER_H, 0));
             promptLabel.setPosition(screenPos.x - promptLabel.getWidth() / 2f, screenPos.y);
         }
 
-        if (isPaused) {
+        if (isPaused  && !showSleepScreen) {
             if (!inOptionMenu) {
                 boolean navigateDown =
                     Gdx.input.isKeyJustPressed(Input.Keys.S) ||
@@ -850,10 +923,13 @@ public class GameScreen implements Screen {
             stage.act(0f);
             stage.draw();
         }
-        if (!isPaused) {
+        if (!isPaused && !showSleepScreen) {
             updateHud();
             hudStage.act(delta);
             hudStage.draw();
+        } else if (showSleepScreen) {
+            hudStage.act(0);
+            hudStage.draw(); // x Days remaining showed only when everything is hidden
         }
     }
 
@@ -969,13 +1045,21 @@ public class GameScreen implements Screen {
         if (action.type == Interaction.Type.FOOD) {
             stats.addCalories(action.calDelta);
             stats.addEnergy(action.energyDelta);
-        } else {
+        } else if (action.type == Interaction.Type.EX_UPPER || action.type == Interaction.Type.EX_LOWER) {
             // Exercise zones: require energy, consume calories, build muscle
-            if (stats.isTired()) return; // optional: block if exhausted
+            if (stats.isTired()) return;
             stats.addEnergy(-action.energyCost);
-            stats.addCalories(action.calDelta);        // usually 0 for exercises
+            stats.addCalories(action.calDelta);
             stats.addUpperMuscle(action.upperDelta);
             stats.addLowerMuscle(action.lowerDelta);
+        } else if (action.type == Interaction.Type.REST) {
+            stats.daysRemaining--;
+            showSleepScreen = true;
+            sleepPhase = SleepPhase.FADE_IN;
+            sleepAlpha = 0f;
+            isPaused = true;
+            hudRoot.setVisible(false);      // add this
+            promptLabel.setVisible(false);  // add this
         }
     }
 

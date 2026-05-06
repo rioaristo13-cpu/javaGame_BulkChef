@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.utils.Json;
 
 public class SaveData {
+    public int daysRemaining;
     public float cal, energy, upperMuscle, lowerMuscle;
     public float posX, posY;
 
@@ -12,6 +13,7 @@ public class SaveData {
         d.cal = stats.cal; d.energy = stats.energy;
         d.upperMuscle = stats.upperMuscle; d.lowerMuscle = stats.lowerMuscle;
         d.posX = posX; d.posY = posY;
+        d.daysRemaining = stats.daysRemaining;
         Gdx.files.local("save.json").writeString(new Json().toJson(d), false);
     }
 
