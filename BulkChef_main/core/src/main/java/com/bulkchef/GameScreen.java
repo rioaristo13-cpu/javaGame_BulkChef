@@ -282,15 +282,26 @@ public class GameScreen implements Screen {
         if (menuGroup != null) {
             menuGroup.setVisible(true);
             menuGroup.setTouchable(Touchable.enabled);
-            menuGroup.setFillParent(true);
+            menuGroup.setFillParent(false);
             menuGroup.center();
+            menuGroup.pack();
+
+            menuGroup.setPosition(
+                (stage.getWidth() - menuGroup.getWidth()) / 2f,
+                (stage.getHeight() - menuGroup.getHeight()) / 2f
+            );
         }
 
         if (optionGroup != null) {
             optionGroup.setVisible(false);
             optionGroup.setTouchable(Touchable.disabled);
-            optionGroup.setFillParent(true);
+            optionGroup.setFillParent(false);
             optionGroup.center();
+            optionGroup.pack();
+            optionGroup.setPosition(
+                (stage.getWidth() - optionGroup.getWidth()) / 2f,
+                (stage.getHeight() - optionGroup.getHeight()) / 2f
+            );
         }
 
 
@@ -459,8 +470,12 @@ public class GameScreen implements Screen {
         if (optionGroup != null) {
             optionGroup.setVisible(true);
             optionGroup.setTouchable(Touchable.enabled);
-            optionGroup.setFillParent(true);
-            optionGroup.center();
+            optionGroup.invalidate();
+            optionGroup.invalidate();
+            optionGroup.pack();
+            float x = (stage.getWidth() - optionGroup.getHeight()) / 2f;
+            float y = (stage.getHeight() - optionGroup.getHeight()) / 2f;
+            optionGroup.setBounds(x, y, optionGroup.getWidth(),optionGroup.getHeight());
         }
 
         if (musicSlider != null) {
@@ -752,8 +767,8 @@ public class GameScreen implements Screen {
             playerPos = playerBody.getPosition();
             camera.position.lerp(new Vector3(playerPos.x, playerPos.y, 0f), 0.1f);
 
-            viewport.apply();
         }
+        viewport.apply();
 
         camera.update();
 
