@@ -184,12 +184,15 @@ public class GameScreen implements Screen {
 
         loadCollisionLayer();
         loadInteractionLayer();
-        interactions.put("treadmill",  new Interaction("Run",   Interaction.Type.EX_LOWER,  -230f, 0, 0,  15f, 20f));
-        interactions.put("benchpress", new Interaction("Bench", Interaction.Type.EX_UPPER,  -450f, 0, 20f, 0,  25f));
-        interactions.put("cycling",    new Interaction("Ride",  Interaction.Type.EX_LOWER,  -230f, 0, 0,  12f, 18f));
-        interactions.put("dumbell",    new Interaction("Lift",  Interaction.Type.EX_UPPER,  -320f, 0, 18f, 0,  22f));
-        interactions.put("kitchen",    new Interaction("Cook",  Interaction.Type.FOOD,      500f, 0f, 0, 0, 0f));
-        interactions.put("bed",        new Interaction("Sleep", Interaction.Type.REST,      0, 0, 0, 0, 0));
+
+        //Interaksi objek objek di game dengan skor yang ada di UI
+        interactions.put("treadmill",  new Interaction("Run",   Interaction.Type.EX_LOWER,  -230f, 0, 0,    15f,20f));
+        interactions.put("benchpress", new Interaction("Bench", Interaction.Type.EX_UPPER,  -450f, 0, 20f,  0,  25f));
+        interactions.put("cycling",    new Interaction("Ride",  Interaction.Type.EX_LOWER,  -230f, 0, 0,    12f,18f));
+        interactions.put("dumbell",    new Interaction("Lift",  Interaction.Type.EX_UPPER,  -320f, 0, 18f,  0,  22f));
+        interactions.put("kitchen",    new Interaction("Cook",  Interaction.Type.FOOD,      500f,  0f,0,    0,  0f));
+        interactions.put("bed",        new Interaction("Sleep", Interaction.Type.REST,      0,     0, 0,    0,  0));
+
         loadPropsLayer();
 
         //Loading animasi player
