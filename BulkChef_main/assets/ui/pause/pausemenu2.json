@@ -113,7 +113,7 @@
           "child": {
             "class": "TextButton",
             "name": "optionbtn",
-            "text": "option",
+            "text": "options",
             "style": {
               "clazz": "com.badlogic.gdx.scenes.scene2d.ui.TextButton",
               "name": "default"

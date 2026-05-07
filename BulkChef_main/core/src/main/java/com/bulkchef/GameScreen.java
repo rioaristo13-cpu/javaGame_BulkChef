@@ -26,10 +26,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.scenes.scene2d.*;
-import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.scenes.scene2d.ui.Slider;
-import com.badlogic.gdx.scenes.scene2d.ui.Table;
-import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
@@ -43,12 +40,24 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import java.util.Comparator;
 
 public class GameScreen implements Screen {
+
+    // Layar waktu tidur
+    private boolean showSleepScreen = false;
+    private float sleepAlpha = 0f;
+    private enum SleepPhase {FADE_IN, HOLD, FADE_OUT}
+    private SleepPhase sleepPhase = SleepPhase.FADE_IN;
+
+    // Zona interaksi di map
     private final java.util.Map<String, Interaction> interactions = new java.util.HashMap<>();
 
+    //Tekstur ikon UI
+    private Image iconCalories, iconEnergy, iconUpper, iconLower, iconTotal;
+
     //UI
+    private Table hudRoot;
     private final PlayerStats stats = new PlayerStats();
     private Stage hudStage;
-    private Label caloriesLabel, energyLabel, upperLabel, lowerLabel, totalLabel;
+    private Label caloriesLabel, energyLabel, upperLabel, lowerLabel, totalLabel, sleepLabel;
 
     private TiledMap map;
     private World world;
@@ -74,8 +83,9 @@ public class GameScreen implements Screen {
     }
     private Direction facing = Direction.DOWN;
 
-    private Texture benchTexture;
-    private Texture treadmillTexture;
+    //Load field tekstur
+    private Texture benchTexture, treadmillTexture, icoCal, icoEnergy, icoUpper, icoLower, icoTotal;
+
     private Body playerBody;
     private SpriteBatch batch ;
     private final BulkChef game;
@@ -222,6 +232,17 @@ public class GameScreen implements Screen {
 
         benchTexture = new Texture(Gdx.files.internal("objects/bench.png"));
         treadmillTexture = new Texture(Gdx.files.internal("objects/treadmill.png"));
+        icoCal    = new Texture(Gdx.files.internal("ui/icons/icon_calories.png"));
+        icoEnergy = new Texture(Gdx.files.internal("ui/icons/icon_energy.png"));
+        icoUpper  = new Texture(Gdx.files.internal("ui/icons/icon_upper.png"));
+        icoLower  = new Texture(Gdx.files.internal("ui/icons/icon_lower.png"));
+        icoTotal  = new Texture(Gdx.files.internal("ui/icons/icon_total.png"));
+
+        iconCalories = new Image(icoCal);
+        iconEnergy   = new Image(icoEnergy);
+        iconUpper    = new Image(icoUpper);
+        iconLower    = new Image(icoLower);
+        iconTotal    = new Image(icoTotal);
 
         icoCal    = new Texture(Gdx.files.internal("ui/icons/icon_calories.png"));
         icoEnergy = new Texture(Gdx.files.internal("ui/icons/icon_energy.png"));
@@ -888,13 +909,13 @@ public class GameScreen implements Screen {
                 break;
             }
         }
-        promptLabel.setVisible(nearZone);
+        promptLabel.setVisible(nearZone && !showSleepScreen);
         if (nearZone) {
             Vector3 screenPos = camera.project(new Vector3(pPos.x, pPos.y + PLAYER_H, 0));
             promptLabel.setPosition(screenPos.x - promptLabel.getWidth() / 2f, screenPos.y);
         }
 
-        if (isPaused) {
+        if (isPaused  && !showSleepScreen) {
             if (!inOptionMenu) {
                 boolean navigateDown =
                     Gdx.input.isKeyJustPressed(Input.Keys.S) ||
