@@ -27,6 +27,7 @@ public class PlayerStats {
     public float energy = 100f;
     public float upperMuscle = 0f;
     public float lowerMuscle = 0f;
+    public int daysRemaining = 30;
 
     public float totalMuscle() {
         return lowerMuscle+upperMuscle;

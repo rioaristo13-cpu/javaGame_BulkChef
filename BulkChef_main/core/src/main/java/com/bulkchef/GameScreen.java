@@ -37,10 +37,9 @@ import com.badlogic.gdx.utils.viewport.*;
 import com.ray3k.stripe.scenecomposer.SceneComposerStageBuilder;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.maps.objects.EllipseMapObject;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
 
-import java.awt.im.InputMethodRequests;
 import java.util.Comparator;
 
 public class GameScreen implements Screen {
@@ -103,6 +102,18 @@ public class GameScreen implements Screen {
     private Table phoneGroup;
     private TextButton newsBtn, dateBtn, tournamentBtn;
     private boolean isPhoneOpen = false;
+
+    //sleep screem
+    private boolean showSleepScreen = false;
+    private float sleepAlpha = 0f;
+    private enum SleepPhase {FADE_IN, HOLD, FADE_OUT}
+    private SleepPhase sleepPhase = SleepPhase.FADE_IN;
+
+    // HUD icons
+    private Table hudRoot;
+    private Label sleepLabel;
+    private Image iconCalories, iconEnergy, iconUpper, iconLower, iconTotal;
+    private Texture icoCal, icoEnergy, icoUpper, icoLower, icoTotal;
 
     // Tiled uses pixels, Box2D uses meters — scale down
     private static final float PPM = 16f; // pixels per meter
@@ -168,6 +179,7 @@ public class GameScreen implements Screen {
             stats.energy = saveData.energy;
             stats.upperMuscle = saveData.upperMuscle;
             stats.lowerMuscle = saveData.lowerMuscle;
+            stats.daysRemaining = saveData.daysRemaining;
         }
 
         camera = new OrthographicCamera();
@@ -186,6 +198,7 @@ public class GameScreen implements Screen {
         interactions.put("cycling",    new Interaction("Ride",         Interaction.Type.EX_LOWER, 0, 0, 0,  12f, 18f));
         interactions.put("dumbell",    new Interaction("Lift",    Interaction.Type.EX_UPPER, 0, 0, 18f, 0,  22f));
         interactions.put("kitchen",    new Interaction("Cook",        Interaction.Type.FOOD,    500f, 30f, 0, 0, 0f));
+        interactions.put("bed", new Interaction("Sleep", Interaction.Type.REST, 0, 0, 0, 0, 0));
         loadPropsLayer();
 
         //Loading animasi player
@@ -209,6 +222,18 @@ public class GameScreen implements Screen {
 
         benchTexture = new Texture(Gdx.files.internal("objects/bench.png"));
         treadmillTexture = new Texture(Gdx.files.internal("objects/treadmill.png"));
+
+        icoCal    = new Texture(Gdx.files.internal("ui/icons/icon_calories.png"));
+        icoEnergy = new Texture(Gdx.files.internal("ui/icons/icon_energy.png"));
+        icoUpper  = new Texture(Gdx.files.internal("ui/icons/icon_upper.png"));
+        icoLower  = new Texture(Gdx.files.internal("ui/icons/icon_lower.png"));
+        icoTotal  = new Texture(Gdx.files.internal("ui/icons/icon_total.png"));
+
+        iconCalories = new Image(icoCal);
+        iconEnergy   = new Image(icoEnergy);
+        iconUpper    = new Image(icoUpper);
+        iconLower    = new Image(icoLower);
+        iconTotal    = new Image(icoTotal);
 
         spawnPlayer();
 
@@ -426,45 +451,52 @@ public class GameScreen implements Screen {
     }
     private final Array<InteractionZone> interactionZones = new Array<>();
 
-    private void buildHud() {
-        hudStage = new Stage(new ScreenViewport());
+        private void buildHud() {
+            hudStage = new Stage(new ScreenViewport());
+            sleepLabel = new Label("", game.skin, "big");
+            sleepLabel.setVisible(false);
+            sleepLabel.setFillParent(true);
+            sleepLabel.setAlignment(com.badlogic.gdx.utils.Align.center);
+            hudStage.addActor(sleepLabel);
 
-        // Root table fills screen
-        Table root = new Table();
-        root.setFillParent(true);
-        root.pad(8f);
-        hudStage.addActor(root);
+            hudRoot = new Table();
+            hudRoot.setFillParent(true);
+            hudRoot.pad(8f);
+            hudStage.addActor(hudRoot);
 
-        // ── Top-left: Calories & Energy ──────────────────────
-        Table topLeft = new Table();
-        caloriesLabel = new Label("Calories: ", game.skin, "big");
-        energyLabel   = new Label("Energy: ",   game.skin, "big");
-        topLeft.add(caloriesLabel).left().row();
-        topLeft.add(energyLabel).left();
+            Table topLeft = new Table();
+            caloriesLabel = new Label("Calories: ", game.skin, "big");
+            energyLabel   = new Label("Energy: ",   game.skin, "big");
+            topLeft.add(iconCalories).size(32, 32).padRight(4);
+            topLeft.add(caloriesLabel).left().row();
+            topLeft.add(iconEnergy).size(32, 32).padRight(4);
+            topLeft.add(energyLabel).left();
 
-        // ── Top-center: Total Muscle ──────────────────────────
-        totalLabel = new Label("Total Muscle: ", game.skin, "big");
+            totalLabel = new Label("Total Muscle: ", game.skin, "big");
 
-        // ── Top-right: Muscle stats ───────────────────────────
-        Table topRight = new Table();
-        upperLabel = new Label("Upper: ", game.skin, "big");
-        lowerLabel = new Label("Lower: ", game.skin, "big");
-        topRight.add(upperLabel).right().row();
-        topRight.add(lowerLabel).right();
+            Table topRight = new Table();
+            upperLabel = new Label("Upper: ", game.skin, "big");
+            lowerLabel = new Label("Lower: ", game.skin, "big");
+            topRight.add(iconUpper).size(32, 32).padRight(4);
+            topRight.add(upperLabel).right().row();
+            topRight.add(iconLower).size(32, 32).padRight(4);
+            topRight.add(lowerLabel).right();
 
-        // ── Lay out top row ───────────────────────────────────
-        root.add(topLeft).top().left().expandX();
-        root.add(totalLabel).top().center().expandX();
-        root.add(topRight).top().right().expandX();
-        root.row();
+            hudRoot.add(topLeft).top().left().expandX();
+            Table topCenter = new Table();
+            topCenter.add(iconTotal).size(32, 32).padRight(4);
+            topCenter.add(totalLabel);
+            hudRoot.add(topCenter).top().center().expandX();
+            hudRoot.add(topRight).top().right().expandX();
+            hudRoot.row();
+            hudRoot.add().expand().colspan(3);
 
-        // ── Middle spacer ────────────────────────────────────
-        root.add().expand().colspan(3);
+            promptLabel = new TextButton("E", game.skin);
+            promptLabel.setVisible(false);
+            promptLabel.setTouchable(Touchable.disabled);
+            hudStage.addActor(promptLabel);
+        }
 
-        promptLabel = new TextButton("E", game.skin);
-        promptLabel.setVisible(false);
-        promptLabel.setTouchable(Touchable.disabled);
-    }
 
     private void openOptionMenu() {
         inOptionMenu = true;
@@ -808,6 +840,40 @@ public class GameScreen implements Screen {
         drawYSorted(playerPos);
         batch.end();
 
+        if (showSleepScreen) {
+            float speed = 0.8f;
+            if (sleepPhase == SleepPhase.FADE_IN) {
+                sleepAlpha = Math.min(1f, sleepAlpha + delta * speed);
+                if (sleepAlpha >= 1f) sleepPhase = SleepPhase.HOLD;
+            } else if (sleepPhase == SleepPhase.HOLD) {
+                sleepAlpha = 1f;
+                if (Gdx.input.isKeyJustPressed(Input.Keys.ANY_KEY) ||
+                    Gdx.input.isKeyJustPressed(Input.Keys.E)) {
+                    sleepPhase = SleepPhase.FADE_OUT;
+                }
+            } else {
+                sleepAlpha = Math.max(0f, sleepAlpha - delta * speed);
+                if (sleepAlpha <= 0f) {
+                    showSleepScreen = false;
+                    isPaused = false;
+                    sleepLabel.setVisible(false);
+                    hudRoot.setVisible(true);
+                }
+            }
+
+            Gdx.gl.glEnable(GL20.GL_BLEND);
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+            shapeRenderer.setColor(0, 0, 0, sleepAlpha);
+            shapeRenderer.rect(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+            shapeRenderer.end();
+
+            sleepLabel.setText(stats.daysRemaining + " days remaining");
+            sleepLabel.setVisible(true);
+            sleepLabel.getColor().a = sleepAlpha;
+            hudStage.act(0);
+            hudStage.draw();
+        }
+
         //Render debug box kolisi
         //debugRenderer.render(world, camera.combined);
 
@@ -1073,9 +1139,12 @@ public class GameScreen implements Screen {
 
         } else {
             if (phoneGroup != null) phoneGroup.setVisible(false);
-            if (!isPaused) {
+            if (!isPaused && !showSleepScreen) {
                 updateHud();
                 hudStage.act(delta);
+                hudStage.draw();
+            } else if ( showSleepScreen) {
+                hudStage.act(0);
                 hudStage.draw();
             }
         }
@@ -1187,22 +1256,32 @@ public class GameScreen implements Screen {
         }
     }
 
-    private void handleInteraction(String type) {
-        Interaction action = interactions.get(type);
-        if (action == null) return;
+        private void handleInteraction(String type) {
+            Interaction action = interactions.get(type);
+            if (action == null) return;
 
-        if (action.type == Interaction.Type.FOOD) {
-            stats.addCalories(action.calDelta);
-            stats.addEnergy(action.energyDelta);
-        } else {
-            // Exercise zones: require energy, consume calories, build muscle
-            if (stats.isTired()) return; // optional: block if exhausted
-            stats.addEnergy(-action.energyCost);
-            stats.addCalories(action.calDelta);        // usually 0 for exercises
-            stats.addUpperMuscle(action.upperDelta);
-            stats.addLowerMuscle(action.lowerDelta);
+            if (action.type == Interaction.Type.FOOD) {
+                stats.addCalories(action.calDelta);
+                stats.addEnergy(action.energyDelta);
+            } else if (action.type == Interaction.Type.EX_UPPER ||
+                action.type == Interaction.Type.EX_LOWER) {
+                if (stats.isTired()) return;
+                stats.addEnergy(-action.energyCost);
+                stats.addCalories(action.calDelta);
+                stats.addUpperMuscle(action.upperDelta);
+                stats.addLowerMuscle(action.lowerDelta);
+            } else if (action.type == Interaction.Type.REST) {
+                stats.daysRemaining--;
+                stats.addEnergy(PlayerStats.MAX_ENERGY);
+                stats.addCalories(-50f);
+                showSleepScreen = true;
+                sleepPhase = SleepPhase.FADE_IN;
+                sleepAlpha = 0f;
+                isPaused = true;
+                hudRoot.setVisible(false);
+                promptLabel.setVisible(false);
+            }
         }
-    }
 
     private void drawRoundedRect(float x, float y, float width, float height, float radius, int segments, Color color) {
         shapeRenderer.setColor(color);
@@ -1255,6 +1334,11 @@ public class GameScreen implements Screen {
         mapRenderer.dispose();
         shapeRenderer.dispose();
         phoneStage.dispose();
+        icoCal.dispose();
+        icoEnergy.dispose();
+        icoUpper.dispose();
+        icoLower.dispose();
+        icoTotal.dispose();
     }
 
 }
