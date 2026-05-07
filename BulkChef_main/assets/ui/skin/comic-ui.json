@@ -67,6 +67,24 @@
 			"b": 0.15,
 			"a": 0.9
 		}
+	},
+	"phone_screen": {
+		"name": "white-pixel",
+		"color": {
+			"r": 0.05,
+			"g": 0.05,
+			"b": 0.1,
+			"a": 1.0
+		}
+	},
+	"phone_body": {
+		"name": "white-pixel",
+		"color": {
+			"r": 0.12,
+			"g": 0.12,
+			"b": 0.12,
+			"a": 1.0
+		}
 	}
 },
 "com.badlogic.gdx.scenes.scene2d.ui.Button$ButtonStyle": {
@@ -251,6 +269,15 @@
 		"down": "button-pressed",
 		"over": "button-highlighted",
 		"focused": "button-highlighted"
+	},
+	"phone-btn": {
+		"font": "font",
+		"fontColor":"black",
+		"downFontColor": "black",
+		"overFontColor": "kuning",
+		"up": "button",
+		"down":"button-pressed",
+		"over":"button-highlighted"
 	}
 },
 "com.badlogic.gdx.scenes.scene2d.ui.TextField$TextFieldStyle": {

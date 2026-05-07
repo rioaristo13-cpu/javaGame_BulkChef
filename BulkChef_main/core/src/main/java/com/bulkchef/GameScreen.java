@@ -40,6 +40,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.maps.objects.EllipseMapObject;
 
+import java.awt.im.InputMethodRequests;
 import java.util.Comparator;
 
 public class GameScreen implements Screen {
@@ -96,6 +97,12 @@ public class GameScreen implements Screen {
 
     private int selectedIndex = 0;
     private int optionSelectedIndex = 0;
+
+    // Field HP
+    private Stage phoneStage;
+    private Table phoneGroup;
+    private TextButton newsBtn, dateBtn, tournamentBtn;
+    private boolean isPhoneOpen = false;
 
     // Tiled uses pixels, Box2D uses meters — scale down
     private static final float PPM = 16f; // pixels per meter
@@ -352,10 +359,48 @@ public class GameScreen implements Screen {
                 }
             });
         }
+
+        phoneStage = new Stage(new ScreenViewport());
+        phoneStage.getViewport().update(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true);
+
+        SceneComposerStageBuilder phoneBuilder = new SceneComposerStageBuilder();
+        phoneBuilder.build(phoneStage, game.skin, Gdx.files.internal("ui/phone/phone.json"));
+
+        phoneGroup    = phoneStage.getRoot().findActor("phonegroup");
+        newsBtn       = phoneStage.getRoot().findActor("newsbtn");
+        dateBtn       = phoneStage.getRoot().findActor("datebtn");
+        tournamentBtn = phoneStage.getRoot().findActor("tournamentbtn");
+
+// Sembunyikan background bawaan button (kita gambar sendiri)
+        for (TextButton btn : new TextButton[]{newsBtn, dateBtn, tournamentBtn}) {
+            if (btn == null) continue;
+            btn.getStyle().up = null;
+            btn.getStyle().down = null;
+            btn.getStyle().over = null;
+            btn.getStyle().focused = null;
+        }
+
+        if (newsBtn != null) newsBtn.addListener(new ChangeListener() {
+            @Override public void changed(ChangeEvent e, Actor a) {
+                game.sfxEnter.play(game.sfxVolume);
+            }
+        });
+        if (dateBtn != null) dateBtn.addListener(new ChangeListener() {
+            @Override public void changed(ChangeEvent e, Actor a) {
+                game.sfxEnter.play(game.sfxVolume);
+            }
+        });
+        if (tournamentBtn != null) tournamentBtn.addListener(new ChangeListener() {
+            @Override public void changed(ChangeEvent e, Actor a) {
+                game.sfxEnter.play(game.sfxVolume);
+            }
+        });
+
         game.bgm.play();
         buildHud();
         InputMultiplexer multiplexer = new InputMultiplexer(hudStage);
         Gdx.input.setInputProcessor(multiplexer);
+
     }
 
     private void loadInteractionLayer() {
@@ -419,7 +464,6 @@ public class GameScreen implements Screen {
         promptLabel = new TextButton("E", game.skin);
         promptLabel.setVisible(false);
         promptLabel.setTouchable(Touchable.disabled);
-        hudStage.addActor(promptLabel);
     }
 
     private void openOptionMenu() {
@@ -722,6 +766,16 @@ public class GameScreen implements Screen {
             }
         }
 
+        if (Gdx.input.isKeyJustPressed(Input.Keys.F) && !isPaused) {
+            isPhoneOpen = !isPhoneOpen;
+            game.sfxNavigate.play(game.sfxVolume);
+            if (isPhoneOpen) {
+                Gdx.input.setInputProcessor(hudStage);
+            } else {
+                Gdx.input.setInputProcessor(new InputMultiplexer(hudStage));
+            }
+        }
+
         Vector2 playerPos = playerBody.getPosition();
 
         if (!isPaused) {
@@ -862,14 +916,170 @@ public class GameScreen implements Screen {
                     }
                 }
             }
+            // gambar outline box pause/option menu
+            shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
+            Gdx.gl.glEnable(GL20.GL_BLEND);
+            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+
+            Table activeGroup = inOptionMenu ? optionGroup : menuGroup;
+            if (activeGroup != null) {
+                    float bx = activeGroup.getX();
+                    float by = activeGroup.getY();
+                    float bw = activeGroup.getWidth();
+                    float bh = activeGroup.getHeight();
+
+                    shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+                    //outline putih
+                    drawRoundedRect(bx - 3, by -3, bw + 6, bh + 6, 12f, 16, Color.WHITE);
+                    //background gelap
+                    drawRoundedRect(bx, by, bw, bh, 10f, 16, new Color(0.15f, 0.15f, 0.15f, 0.95f));
+                    shapeRenderer.end();
+            }
             stage.act(0f);
             stage.draw();
         }
-        if (!isPaused) {
+        if (isPhoneOpen && !isPaused) {
+            phoneGroup.setVisible(true);
+            phoneGroup.pack();
+            Gdx.app.log("STAGE", "hudW=" + hudStage.getWidth() + " gdxW=" + Gdx.graphics.getWidth());
+
+            // Ukuran dan posisi phone
+            float bodyW = 160f;  // lebar bodi HP
+            float bodyH = 220f;  // tinggi bodi HP
+            float margin = 10f;  // jarak layar dalam bodi
+            float screenW = bodyW - margin * 2;
+            float screenH = bodyH - margin * 2 - 20f; // 20f untuk bodi atas/bawah
+            float bx = Gdx.graphics.getWidth() - bodyW;  // posisi X bodi
+            float by = 20f;                                    // posisi Y bodi
+            float sx = bx + margin;   // posisi X layar
+            float sy = by + margin;   // posisi Y layar
+
+            shapeRenderer.setProjectionMatrix(hudStage.getCamera().combined);
+            Gdx.gl.glEnable(GL20.GL_BLEND);
+            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+            com.badlogic.gdx.math.Matrix4 pixelMatrix = new com.badlogic.gdx.math.Matrix4()
+                .setToOrtho2D(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+            shapeRenderer.setProjectionMatrix(pixelMatrix);
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+
+            // Bodi HP hitam
+            drawRoundedRect(bx, by, bodyW, bodyH, 18f, 16, Color.BLACK);
+
+            // Layar putih di dalam bodi
+            drawRoundedRect(sx, sy, screenW, screenH, 10f, 16, Color.WHITE);
+
+            // Status bar abu di atas layar
+            float sbH = 18f;
+            drawRoundedRect(sx, sy + screenH - sbH, screenW, sbH, 10f, 16,
+                new Color(0.85f, 0.85f, 0.85f, 1f));
+
+            // Navbar abu di bawah layar
+            float navH = 26f;
+            drawRoundedRect(sx, sy, screenW, navH, 10f, 16,
+                new Color(0.85f, 0.85f, 0.85f, 1f));
+
+            // 3 widget — N (biru), 31 (hijau), VS (hitam-merah)
+            float wW = screenW * 0.28f;
+            float wH = wW * 1.1f;
+            float wY = sy + screenH - sbH - wH - 10f;
+            float wSpacing = (screenW - 3 * wW) / 4f;
+            float wx1 = sx + wSpacing;
+            float wx2 = sx + wSpacing * 2 + wW;
+            float wx3 = sx + wSpacing * 3 + wW * 2;
+
+            // Widget NEWS — biru
+            drawRoundedRect(wx1, wY, wW, wH, 8f, 16, new Color(0.23f, 0.35f, 0.8f, 1f));
+            // Widget DATE — hijau
+            drawRoundedRect(wx2, wY, wW, wH, 8f, 16, new Color(0.13f, 0.59f, 0.33f, 1f));
+            // Widget CLASH — hitam dengan aksen merah (border merah)
+            drawRoundedRect(wx3, wY, wW, wH, 8f, 16, Color.BLACK);
+            drawRoundedRect(wx3 + 2, wY + 2, wW - 4, wH - 4, 6f, 16,
+                new Color(0.1f, 0.1f, 0.1f, 1f));
+
+            shapeRenderer.end();
+
+            // Render teks widget pakai BitmapFont dari skin
+            com.badlogic.gdx.graphics.g2d.BitmapFont font = game.skin.getFont("font");
+            batch.setProjectionMatrix(pixelMatrix);
+            batch.begin();
+
+            // "N" putih di widget NEWS
+            font.setColor(Color.WHITE);
+            com.badlogic.gdx.graphics.g2d.GlyphLayout gl = new com.badlogic.gdx.graphics.g2d.GlyphLayout(font, "N");
+            font.draw(batch, "N", wx1 + (wW - gl.width) / 2f, wY + ( wH + gl.height) / 2f);
+
+            // "31" putih di widget DATE
+            gl.setText(font, "31");
+            font.draw(batch, "31", wx2 + (wW - gl.width) / 2f, wY + ( wH + gl.height) / 2f);
+
+            // "VS" merah di widget CLASH
+            font.setColor(new Color(0.9f, 0.1f, 0.1f, 1f));
+            gl.setText(font, "VS");
+            font.draw(batch, "VS", wx3 + (wW - gl.width) / 2f, wY + ( wH + gl.height) / 2f);
+
+            font.setColor(Color.WHITE); // reset
+
+            // Label nama widget di bawah
+            font.setColor(Color.BLACK);
+            float lblY = wY - 2f;
+            gl.setText(font, "NEWS");
+            font.draw(batch, "NEWS", wx1 + (wW - gl.width) / 2f, lblY);
+            gl.setText(font, "DATE");
+            font.draw(batch, "DATE", wx2 + (wW - gl.width) / 2f, lblY);
+            gl.setText(font, "CLASH");
+            font.draw(batch, "CLASH", wx3 + (wW - gl.width) / 2f, lblY);
+
+            // Status bar teks
+            font.setColor(Color.BLACK);
+            font.draw(batch, "01/01  |||  BAT", sx + 4f, sy + screenH - 4f);
+
+            // Navbar teks
+            gl.setText(font, "BACK");
+            font.draw(batch, "BACK", sx + screenW * 0.15f, sy + navH - 6f);
+            gl.setText(font, "HOME");
+            font.draw(batch, "HOME", sx + screenW * 0.55f, sy + navH - 6f);
+
+            batch.end();
+
+// Deteksi klik manual
+            float hbx = bx - 70f;
+            float hsx = hbx + margin;
+            float hwW = screenW * 0.28f;
+            float hwH = hwW * 1.1f;
+            float hwY = sy + screenH - sbH - hwH - 10f;
+            float hwSpacing = (screenW - 3 * hwW) / 4f;
+            float hwx1 = hsx + hwSpacing;
+            float hwx2 = hsx + hwSpacing * 2 + hwW;
+            float hwx3 = hsx + hwSpacing * 3 + hwW * 2;
+
+            if (Gdx.input.justTouched()) {
+                float mx = Gdx.input.getX();
+                float my = Gdx.graphics.getHeight() - Gdx.input.getY();
+
+                if (mx >= hwx1 && mx <= hwx1 + hwW && my >= hwY && my <= hwY + hwH) {
+                    game.sfxEnter.play(game.sfxVolume);
+                } else if (mx >= hwx2 && mx <= hwx2 + hwW && my >= hwY && my <= hwY + hwH) {
+                    game.sfxEnter.play(game.sfxVolume);
+                } else if (mx >= hwx3 && mx <= hwx3 + hwW && my >= hwY && my <= hwY + hwH) {
+                    game.sfxEnter.play(game.sfxVolume);
+                }
+
+            }
+            phoneStage.act(delta);
+
             updateHud();
             hudStage.act(delta);
             hudStage.draw();
+
+        } else {
+            if (phoneGroup != null) phoneGroup.setVisible(false);
+            if (!isPaused) {
+                updateHud();
+                hudStage.act(delta);
+                hudStage.draw();
+            }
         }
+
     }
 
     private void updateHud() {
@@ -994,9 +1204,23 @@ public class GameScreen implements Screen {
         }
     }
 
+    private void drawRoundedRect(float x, float y, float width, float height, float radius, int segments, Color color) {
+        shapeRenderer.setColor(color);
+
+        shapeRenderer.rect(x + radius, y, width - 2 * radius, height);
+        shapeRenderer.rect(x, y + radius, width, height - 2 * radius);
+
+        shapeRenderer.arc(x + radius, y + radius, radius, 180, 90, segments); //kiri bawah
+        shapeRenderer.arc(x + width - radius, y + radius, radius, 270, 90, segments); // kanan bawah
+        shapeRenderer.arc(x + radius, y + height - radius, radius, 90, 90, segments); // kiri atas
+        shapeRenderer.arc(x + width - radius, y + height - radius, radius, 0, 90, segments); // kanan atas
+
+    }
+
     @Override
     public void resize(int width, int height) {
         viewport.update(width, height, true);
+        if ( phoneStage != null) phoneStage.getViewport().update(width, height, true);
     }
 
     @Override
@@ -1030,5 +1254,7 @@ public class GameScreen implements Screen {
         batch.dispose();
         mapRenderer.dispose();
         shapeRenderer.dispose();
+        phoneStage.dispose();
     }
+
 }

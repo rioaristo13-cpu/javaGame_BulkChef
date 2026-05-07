@@ -203,7 +203,6 @@
         }
       ],
       "name": "menugroup",
-      "background": "panel_bg",
       "color": null,
       "padLeft": 30,
       "padRight": 30,
@@ -494,7 +493,6 @@
         }
       ],
       "name": "optiongroup",
-      "background": "panel_bg",
       "color": null,
       "padLeft": 30,
       "padRight": 30,
