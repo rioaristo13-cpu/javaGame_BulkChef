@@ -7,7 +7,6 @@ public class SaveData {
     public int daysRemaining;
     public float cal, energy, upperMuscle, lowerMuscle;
     public float posX, posY;
-    public int daysRemaining;
 
     public static void save(PlayerStats stats, float posX, float posY) {
         SaveData d = new SaveData();

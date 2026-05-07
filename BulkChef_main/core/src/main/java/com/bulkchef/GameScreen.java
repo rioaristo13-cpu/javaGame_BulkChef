@@ -113,18 +113,6 @@ public class GameScreen implements Screen {
     private TextButton newsBtn, dateBtn, tournamentBtn;
     private boolean isPhoneOpen = false;
 
-    //sleep screem
-    private boolean showSleepScreen = false;
-    private float sleepAlpha = 0f;
-    private enum SleepPhase {FADE_IN, HOLD, FADE_OUT}
-    private SleepPhase sleepPhase = SleepPhase.FADE_IN;
-
-    // HUD icons
-    private Table hudRoot;
-    private Label sleepLabel;
-    private Image iconCalories, iconEnergy, iconUpper, iconLower, iconTotal;
-    private Texture icoCal, icoEnergy, icoUpper, icoLower, icoTotal;
-
     // Tiled uses pixels, Box2D uses meters — scale down
     private static final float PPM = 16f; // pixels per meter
 
