@@ -58,6 +58,7 @@ public class GameScreen implements Screen {
     private final PlayerStats stats = new PlayerStats();
     private Stage hudStage;
     private Label caloriesLabel, energyLabel, upperLabel, lowerLabel, totalLabel, sleepLabel;
+    private Label adminLabel;
 
     private TiledMap map;
     private World world;
@@ -112,6 +113,29 @@ public class GameScreen implements Screen {
     private Table phoneGroup;
     private TextButton newsBtn, dateBtn, tournamentBtn;
     private boolean isPhoneOpen = false;
+    private enum PhoneScreen {HOME, NEWS, NEWS_DETAIL, DATE, CLASH}
+    private PhoneScreen currentPhoneScreen = PhoneScreen.HOME;
+    private int selectedNewsIndex = 0;
+    private float newsScrollY = 0f;
+    private float newsDetailScrollY = 0f;
+    private float dateScrollY = 0f;
+    private float clashScrollY = 0f;
+    private com.badlogic.gdx.InputAdapter scrollAdapter;
+    private Texture grayTexture;
+
+    private boolean[] clashWon = new boolean[4]; // track turnamen yang sudah dimenangkan
+    private String[] winNewsTitle = new String[4];
+    private String[] winNewsDesc = new String[4];
+    private int winNewsCount = 0;
+
+    private static final String[] NEWS_TITLE = {
+        "Gym Baru Dibuka di Kota!",
+        "Turnamen Bulking Minggu Ini"
+    };
+    private static final String[] NEWS_DESC = {
+        "Fasilitas lengkap tersedia. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
+        "Daftar sekarang! Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut enim ad minim veniam, quis nostrud exercitation."
+    };
 
     // Tiled uses pixels, Box2D uses meters — scale down
     private static final float PPM = 16f; // pixels per meter
@@ -129,6 +153,31 @@ public class GameScreen implements Screen {
 
     private static final float VIRTUAL_W = 320f / PPM;
     private static final float VIRTUAL_H = 180f / PPM;
+
+    // Kalender
+    private int currentMonth = 0; // 0 = Januari, 11 = Desember
+    private static final int CALENDAR_YEAR = 2024;
+    private static final int[] EVENT_MONTHS = {0, 3, 9}; // Jan, Apr, Oct
+    private static final int[] EVENT_DAYS = {1, 1, 1};
+    private static final String[] EVENT_NAMES = {"Novice - Open Classic", "Advance - IFBB Pro", "Pro - Mr. Olympia"};
+    private static final String[] MONTH_NAMES = {
+        "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+        "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+    };
+    private static final int[] DAYS_IN_MONTH = {31,29,31,30,31,30,31,31,30,31,30,31}; // 2024 leap year
+    private boolean isAdminMode = false;
+
+    private static final String[] CLASH_NAMES = {
+        "Street Tournament",
+        "Novice - Open Classic",
+        "Advance - IFBB Pro",
+        "Pro - Mr. Olympia"
+    };
+    private static final int[] CLASH_MIN_MUSCLE = {0, 0, 61, 86};
+    private static final int[] CLASH_MAX_MUSCLE = {999, 60, 85, 100};
+    private static final float[] CLASH_REWARD_UPPER = {2, 5, 10, 15};
+    private static final float[] CLASH_REWARD_LOWER = {2, 5, 10, 15};
+    private static final float[] CLASH_REWARD_ENERGY = {10, 15, 25, 100};
 
     private static class PropEntry {
         float x, y, w, h;
@@ -191,10 +240,10 @@ public class GameScreen implements Screen {
 
         loadCollisionLayer();
         loadInteractionLayer();
-        interactions.put("treadmill",  new Interaction("Run",  Interaction.Type.EX_LOWER, 0, 0, 0,  15f, 20f));
-        interactions.put("benchpress", new Interaction("Bench",       Interaction.Type.EX_UPPER, 0, 0, 20f, 0,  25f));
-        interactions.put("cycling",    new Interaction("Ride",         Interaction.Type.EX_LOWER, 0, 0, 0,  12f, 18f));
-        interactions.put("dumbell",    new Interaction("Lift",    Interaction.Type.EX_UPPER, 0, 0, 18f, 0,  22f));
+        interactions.put("treadmill",  new Interaction("Run",   Interaction.Type.EX_LOWER, -805f, 0, 0,   2.0f, 20f));
+        interactions.put("benchpress", new Interaction("Bench", Interaction.Type.EX_UPPER, -125f, 0, 2.5f, 0,   25f));
+        interactions.put("cycling",    new Interaction("Ride",  Interaction.Type.EX_LOWER, -75f, 0, 0,   1.5f, 18f));
+        interactions.put("dumbell",    new Interaction("Lift",  Interaction.Type.EX_UPPER, -95f, 0, 1.5f, 0,   22f));
         interactions.put("kitchen",    new Interaction("Cook",        Interaction.Type.FOOD,    500f, 30f, 0, 0, 0f));
         interactions.put("bed", new Interaction("Sleep", Interaction.Type.REST, 0, 0, 0, 0, 0));
         loadPropsLayer();
@@ -430,9 +479,54 @@ public class GameScreen implements Screen {
             }
         });
 
+        scrollAdapter = new com.badlogic.gdx.InputAdapter() {
+            @Override
+            public boolean scrolled(float amountX, float amountY) {
+                if (!isPhoneOpen) return false;
+                float scrollAmount = amountY * 20f;
+                if (currentPhoneScreen == PhoneScreen.NEWS) {
+                    newsScrollY += scrollAmount;
+                    Gdx.app.log("SCROLL", "newsScrollY=" + newsScrollY);
+                } else if (currentPhoneScreen == PhoneScreen.NEWS_DETAIL) {
+                    newsDetailScrollY += scrollAmount;
+                } else if (currentPhoneScreen == PhoneScreen.DATE) {
+                    dateScrollY += scrollAmount;
+                } else if (currentPhoneScreen == PhoneScreen.CLASH) {
+                    clashScrollY += scrollAmount;
+                }
+                newsScrollY = Math.max(0, newsScrollY);
+                newsDetailScrollY = Math.max(0, newsDetailScrollY);
+                dateScrollY = Math.max(0, dateScrollY);
+                clashScrollY = Math.max(0, clashScrollY);
+                return true;
+            }
+        };
+
+        com.badlogic.gdx.graphics.Pixmap pixmap = new com.badlogic.gdx.graphics.Pixmap(1, 1, com.badlogic.gdx.graphics.Pixmap.Format.RGBA8888);
+        pixmap.setColor(0.7f, 0.7f, 0.7f, 1f);
+        pixmap.fill();
+        grayTexture = new Texture(pixmap);
+        pixmap.dispose();
+
         game.bgm.play();
         buildHud();
-        InputMultiplexer multiplexer = new InputMultiplexer(hudStage);
+        InputMultiplexer multiplexer = new InputMultiplexer(hudStage, new com.badlogic.gdx.InputAdapter() {
+            @Override
+            public boolean scrolled(float amountX, float amountY) {
+                if (!isPhoneOpen) return false;
+                float scrollAmount = amountY * 20f;
+                if (currentPhoneScreen == PhoneScreen.NEWS) newsScrollY += scrollAmount;
+                else if (currentPhoneScreen == PhoneScreen.NEWS_DETAIL) newsDetailScrollY += scrollAmount;
+                else if (currentPhoneScreen == PhoneScreen.DATE) dateScrollY += scrollAmount;
+                else if (currentPhoneScreen == PhoneScreen.CLASH) clashScrollY += scrollAmount;
+                // Clamp ke minimum 0
+                newsScrollY = Math.max(0, newsScrollY);
+                newsDetailScrollY = Math.max(0, newsDetailScrollY);
+                dateScrollY = Math.max(0, dateScrollY);
+                clashScrollY = Math.max(0, clashScrollY);
+                return true;
+            }
+        });
         Gdx.input.setInputProcessor(multiplexer);
 
     }
@@ -476,10 +570,16 @@ public class GameScreen implements Screen {
             Table topLeft = new Table();
             caloriesLabel = new Label("Calories: ", game.skin, "big");
             energyLabel   = new Label("Energy: ",   game.skin, "big");
+            adminLabel    = new Label("ADMIN MODE", game.skin, "big");
+            adminLabel.setColor(Color.RED);
+            adminLabel.setVisible(false);
+
+            topLeft.row();
             topLeft.add(iconCalories).size(32, 32).padRight(4);
             topLeft.add(caloriesLabel).left().row();
             topLeft.add(iconEnergy).size(32, 32).padRight(4);
-            topLeft.add(energyLabel).left();
+            topLeft.add(energyLabel).left().row();
+            topLeft.add(adminLabel).left().colspan(2);
 
             totalLabel = new Label("Total Muscle: ", game.skin, "big");
 
@@ -796,6 +896,13 @@ public class GameScreen implements Screen {
                     stage.setKeyboardFocus(resumeButton);
                 }
 
+                if (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) &&
+                    Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) &&
+                    Gdx.input.isKeyJustPressed(Input.Keys.A)) {
+                    isAdminMode = !isAdminMode;
+                    game.sfxEnter.play(game.sfxVolume);
+                }
+
             } else {
                 if (inOptionMenu) {
                     closeOptionMenu();
@@ -811,9 +918,9 @@ public class GameScreen implements Screen {
             isPhoneOpen = !isPhoneOpen;
             game.sfxNavigate.play(game.sfxVolume);
             if (isPhoneOpen) {
-                Gdx.input.setInputProcessor(hudStage);
+                Gdx.input.setInputProcessor(new InputMultiplexer(hudStage, scrollAdapter));
             } else {
-                Gdx.input.setInputProcessor(new InputMultiplexer(hudStage));
+                Gdx.input.setInputProcessor(new InputMultiplexer(hudStage, scrollAdapter));
             }
         }
 
@@ -848,6 +955,13 @@ public class GameScreen implements Screen {
         batch.begin();
         drawYSorted(playerPos);
         batch.end();
+
+        if (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) &&
+            Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) &&
+            Gdx.input.isKeyJustPressed(Input.Keys.A)) {
+            isAdminMode = !isAdminMode;
+            game.sfxEnter.play(game.sfxVolume);
+        }
 
         if (showSleepScreen) {
             float speed = 0.8f;
@@ -1019,15 +1133,19 @@ public class GameScreen implements Screen {
             Gdx.app.log("STAGE", "hudW=" + hudStage.getWidth() + " gdxW=" + Gdx.graphics.getWidth());
 
             // Ukuran dan posisi phone
-            float bodyW = 160f;  // lebar bodi HP
-            float bodyH = 220f;  // tinggi bodi HP
+            float bodyH = Math.min(Math.max(Gdx.graphics.getHeight() * 0.55f, 300f), 480f);
+            float bodyW = Math.min(Math.max(bodyH * 0.55f, 180f), 280f);
             float margin = 10f;  // jarak layar dalam bodi
             float screenW = bodyW - margin * 2;
             float screenH = bodyH - margin * 2 - 20f; // 20f untuk bodi atas/bawah
-            float bx = Gdx.graphics.getWidth() - bodyW;  // posisi X bodi
-            float by = 20f;                                    // posisi Y bodi
+            float bx = (Gdx.graphics.getWidth() - bodyW) / 2f;  // tengah horizontal
+            float by = (Gdx.graphics.getHeight() - bodyH) / 2f; // tengah vertikal posisi Y bodi
             float sx = bx + margin;   // posisi X layar
             float sy = by + margin;   // posisi Y layar
+            float navH = 26f;
+            float hNavH = navH * 3f;
+            float hNavY = sy + 5f;
+
 
             shapeRenderer.setProjectionMatrix(hudStage.getCamera().combined);
             Gdx.gl.glEnable(GL20.GL_BLEND);
@@ -1049,10 +1167,10 @@ public class GameScreen implements Screen {
                 new Color(0.85f, 0.85f, 0.85f, 1f));
 
             // Navbar abu di bawah layar
-            float navH = 26f;
             drawRoundedRect(sx, sy, screenW, navH, 10f, 16,
                 new Color(0.85f, 0.85f, 0.85f, 1f));
 
+            // 3 widget — N (biru), 31 (hijau), VS (hitam-merah)
             // 3 widget — N (biru), 31 (hijau), VS (hitam-merah)
             float wW = screenW * 0.28f;
             float wH = wW * 1.1f;
@@ -1062,15 +1180,29 @@ public class GameScreen implements Screen {
             float wx2 = sx + wSpacing * 2 + wW;
             float wx3 = sx + wSpacing * 3 + wW * 2;
 
-            // Widget NEWS — biru
-            drawRoundedRect(wx1, wY, wW, wH, 8f, 16, new Color(0.23f, 0.35f, 0.8f, 1f));
-            // Widget DATE — hijau
-            drawRoundedRect(wx2, wY, wW, wH, 8f, 16, new Color(0.13f, 0.59f, 0.33f, 1f));
-            // Widget CLASH — hitam dengan aksen merah (border merah)
-            drawRoundedRect(wx3, wY, wW, wH, 8f, 16, Color.BLACK);
-            drawRoundedRect(wx3 + 2, wY + 2, wW - 4, wH - 4, 6f, 16,
-                new Color(0.1f, 0.1f, 0.1f, 1f));
+            if (currentPhoneScreen == PhoneScreen.HOME) { // bagian shapeRenderer
+                drawRoundedRect(wx1, wY, wW, wH, 8f, 16, new Color(0.23f, 0.35f, 0.8f, 1f));
+                drawRoundedRect(wx2, wY, wW, wH, 8f, 16, new Color(0.13f, 0.59f, 0.33f, 1f));
+                drawRoundedRect(wx3, wY, wW, wH, 8f, 16, Color.BLACK);
+                drawRoundedRect(wx3 + 2, wY + 2, wW - 4, wH - 4, 6f, 16, new Color(0.1f, 0.1f, 0.1f, 1f));
 
+            } else if (currentPhoneScreen == PhoneScreen.NEWS) {
+                float imgW = screenW - 10f;
+                float imgH = 70f;
+                float imgX = sx + 5f;
+                float img1Y = sy + screenH - sbH - imgH - 10f;
+                float img2Y = img1Y - imgH - 50f;
+
+            } else if (currentPhoneScreen == PhoneScreen.NEWS_DETAIL) {
+                float imgH = 130f;
+                float imgY = sy + screenH - sbH - imgH - 10f + newsDetailScrollY;
+                float imgX = sx + 5f;
+                float imgW = screenW - 10f;
+                float contentBottom2 = sy + navH + 5f;
+                if (imgY + imgH > contentBottom2 && imgY + imgH < sy + screenH - sbH) {
+                }
+
+            }
             shapeRenderer.end();
 
             // Render teks widget pakai BitmapFont dari skin
@@ -1078,37 +1210,249 @@ public class GameScreen implements Screen {
             batch.setProjectionMatrix(pixelMatrix);
             batch.begin();
 
-            // "N" putih di widget NEWS
-            font.setColor(Color.WHITE);
             com.badlogic.gdx.graphics.g2d.GlyphLayout gl = new com.badlogic.gdx.graphics.g2d.GlyphLayout(font, "N");
-            font.draw(batch, "N", wx1 + (wW - gl.width) / 2f, wY + ( wH + gl.height) / 2f);
 
-            // "31" putih di widget DATE
-            gl.setText(font, "31");
-            font.draw(batch, "31", wx2 + (wW - gl.width) / 2f, wY + ( wH + gl.height) / 2f);
+            float contentBottom = sy + navH + 5f;
 
-            // "VS" merah di widget CLASH
-            font.setColor(new Color(0.9f, 0.1f, 0.1f, 1f));
-            gl.setText(font, "VS");
-            font.draw(batch, "VS", wx3 + (wW - gl.width) / 2f, wY + ( wH + gl.height) / 2f);
+            if (currentPhoneScreen == PhoneScreen.HOME) { // bagian batch
+                font.setColor(Color.WHITE);
+                gl.setText(font, "N");
+                font.draw(batch, "N", wx1 + (wW - gl.width) / 2f, wY + (wH + gl.height) / 2f);
+                gl.setText(font, "31");
+                font.draw(batch, "31", wx2 + (wW - gl.width) / 2f, wY + (wH + gl.height) / 2f);
+                font.setColor(new Color(0.9f, 0.1f, 0.1f, 1f));
+                gl.setText(font, "VS");
+                font.draw(batch, "VS", wx3 + (wW - gl.width) / 2f, wY + (wH + gl.height) / 2f);
+                font.setColor(Color.BLACK);
+                float lblY = wY - 2f;
+                gl.setText(font, "NEWS");
+                font.draw(batch, "NEWS", wx1 + (wW - gl.width) / 2f, lblY);
+                gl.setText(font, "DATE");
+                font.draw(batch, "DATE", wx2 + (wW - gl.width) / 2f, lblY);
+                gl.setText(font, "CLASH");
+                font.draw(batch, "CLASH", wx3 + (wW - gl.width) / 2f, lblY);
 
-            font.setColor(Color.WHITE); // reset
+            } else if (currentPhoneScreen == PhoneScreen.NEWS) {
+                font.setColor(Color.BLACK);
+                float imgH = 70f;
+                float img1Y = sy + screenH - sbH - imgH - 10f;
+                float img2Y = img1Y - imgH - 47f;
 
-            // Label nama widget di bawah
-            font.setColor(Color.BLACK);
-            float lblY = wY - 2f;
-            gl.setText(font, "NEWS");
-            font.draw(batch, "NEWS", wx1 + (wW - gl.width) / 2f, lblY);
-            gl.setText(font, "DATE");
-            font.draw(batch, "DATE", wx2 + (wW - gl.width) / 2f, lblY);
-            gl.setText(font, "CLASH");
-            font.draw(batch, "CLASH", wx3 + (wW - gl.width) / 2f, lblY);
+                float contentTop = sy + screenH - sbH - 5f;
+                float contentH = contentTop - contentBottom;
 
-            // Status bar teks
+                batch.end();
+                com.badlogic.gdx.math.Rectangle scissors = new com.badlogic.gdx.math.Rectangle();
+                com.badlogic.gdx.math.Rectangle clipBounds = new com.badlogic.gdx.math.Rectangle(
+                    sx, contentBottom, screenW, sy + screenH - sbH - contentBottom);
+                com.badlogic.gdx.utils.viewport.Viewport vp = hudStage.getViewport();
+                com.badlogic.gdx.scenes.scene2d.utils.ScissorStack.calculateScissors(
+                    hudStage.getCamera(), vp.getScreenX(), vp.getScreenY(),
+                    vp.getScreenWidth(), vp.getScreenHeight(),
+                    batch.getTransformMatrix(), clipBounds, scissors);
+
+                if (com.badlogic.gdx.scenes.scene2d.utils.ScissorStack.pushScissors(scissors)) {
+                    batch.begin();
+                    font.setColor(Color.BLACK);
+                    float scrollimg1Y = sy + screenH - sbH - 70f - 10f + newsScrollY;
+                    float scrollimg2Y = scrollimg1Y - 70f - 47f;
+
+                    // Gambar placeholder pakai batch
+                    batch.setColor(0.7f, 0.7f, 0.7f, 1f);
+                    batch.draw(grayTexture, sx + 5f, scrollimg1Y, screenW - 10f, 70f);
+                    batch.draw(grayTexture, sx + 5f, scrollimg2Y, screenW - 10f, 70f);
+                    batch.setColor(1f, 1f, 1f, 1f);
+
+                    font.setColor(Color.BLACK);
+                    font.draw(batch, NEWS_TITLE[0], sx + 5f, scrollimg1Y - 5f);
+                    font.draw(batch, NEWS_TITLE[1], sx + 5f, scrollimg2Y - 5f);
+
+                    // Setelah berita statis (NEWS_TITLE[0] dan NEWS_TITLE[1])
+                    for (int i = 0; i < winNewsCount; i++) {
+                        float winImg1Y = scrollimg2Y - (i + 1) * (70f + 47f);
+                        batch.setColor(0.8f, 0.9f, 0.8f, 1f); // hijau muda untuk berita menang
+                        batch.draw(grayTexture, sx + 5f, winImg1Y, screenW - 10f, 70f);
+                        batch.setColor(1f, 1f, 1f, 1f);
+                        font.setColor(Color.BLACK);
+                        font.draw(batch, winNewsTitle[i], sx + 5f, winImg1Y - 5f);
+                    }
+                    batch.end();
+                    com.badlogic.gdx.scenes.scene2d.utils.ScissorStack.popScissors();
+                }
+                batch.begin();
+            } else if (currentPhoneScreen == PhoneScreen.NEWS_DETAIL) {
+                float imgH = 130f;
+                float contentTop = sy + screenH -sbH  - 5f;
+                float contentH = contentTop - contentBottom;
+
+                batch.end();
+                com.badlogic.gdx.math.Rectangle scissors = new com.badlogic.gdx.math.Rectangle();
+                com.badlogic.gdx.math.Rectangle clipBounds = new com.badlogic.gdx.math.Rectangle(
+                    sx, contentBottom, screenW, contentH);
+                com.badlogic.gdx.utils.viewport.Viewport vp = hudStage.getViewport();
+                com.badlogic.gdx.scenes.scene2d.utils.ScissorStack.calculateScissors(
+                    hudStage.getCamera(), vp.getScreenX(), vp.getScreenY(),
+                    vp.getScreenWidth(), vp.getScreenHeight(),
+                    batch.getTransformMatrix(), clipBounds, scissors);
+
+                if (com.badlogic.gdx.scenes.scene2d.utils.ScissorStack.pushScissors(scissors)) {
+                    batch.begin();
+                    float scrolledImgY = sy + screenH - sbH - 130f - 10f + newsDetailScrollY;
+                    // Gambar placeholder pakai batch
+                    batch.setColor(0.7f, 0.7f, 0.7f, 1f);
+                    batch.draw(grayTexture, sx + 5f, scrolledImgY, screenW - 10f, 130f);
+                    batch.setColor(Color.WHITE);
+                    // Teks
+                    font.setColor(Color.BLACK);
+                    font.draw(batch, NEWS_TITLE[selectedNewsIndex], sx + 5f, scrolledImgY - 8f);
+                    font.draw(batch, NEWS_DESC[selectedNewsIndex], sx + 5f, scrolledImgY - 25f,
+                        screenW - 10f, com.badlogic.gdx.utils.Align.left, true);
+                    batch.end();
+                    com.badlogic.gdx.scenes.scene2d.utils.ScissorStack.popScissors();
+                }
+                batch.begin();
+
+            } else if (currentPhoneScreen == PhoneScreen.DATE) {
+                float contentTop = sy + screenH - sbH - 5f;
+                float contentH = contentTop - contentBottom;
+
+                batch.end();
+                com.badlogic.gdx.math.Rectangle scissors = new com.badlogic.gdx.math.Rectangle();
+                com.badlogic.gdx.math.Rectangle clipBounds = new com.badlogic.gdx.math.Rectangle(
+                    sx, contentBottom, screenW, contentH);
+                com.badlogic.gdx.utils.viewport.Viewport vp = hudStage.getViewport();
+                com.badlogic.gdx.scenes.scene2d.utils.ScissorStack.calculateScissors(
+                    hudStage.getCamera(), vp.getScreenX(), vp.getScreenY(),
+                    vp.getScreenWidth(), vp.getScreenHeight(),
+                    batch.getTransformMatrix(), clipBounds, scissors);
+
+                if (com.badlogic.gdx.scenes.scene2d.utils.ScissorStack.pushScissors(scissors)) {
+                    batch.begin();
+                    font.setColor(Color.BLACK);
+
+                    // Header bulan
+                    float headerY = sy + screenH - sbH - 15f;
+                    gl.setText(font, "< " + MONTH_NAMES[currentMonth] + " 2024 >");
+                    font.draw(batch, "< " + MONTH_NAMES[currentMonth] + " 2024 >",
+                        sx + (screenW - gl.width) / 2f, headerY);
+
+                    // Header hari
+                    String[] dayNames = {"Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"};
+                    float cellW = screenW / 7f;
+                    float dayHeaderY = headerY - 18f;
+                    for (int i = 0; i < 7; i++) {
+                        gl.setText(font, dayNames[i]);
+                        font.draw(batch, dayNames[i], sx + i * cellW + (cellW - gl.width) / 2f, dayHeaderY);
+                    }
+
+                    // Grid tanggal
+                    // Hitung hari pertama bulan (2024)
+                    java.util.Calendar cal = java.util.Calendar.getInstance();
+                    cal.set(CALENDAR_YEAR, currentMonth, 1);
+                    int firstDay = cal.get(java.util.Calendar.DAY_OF_WEEK) - 1; // 0=Sun
+
+                    int totalDays = DAYS_IN_MONTH[currentMonth];
+                    float cellH = 18f;
+                    float gridStartY = dayHeaderY - cellH;
+
+                    for (int day = 1; day <= totalDays; day++) {
+                        int pos = day - 1 + firstDay;
+                        int col = pos % 7;
+                        int row = pos / 7;
+                        float cx = sx + col * cellW;
+                        float cy = gridStartY - row * cellH;
+
+                        // Cek apakah ada event
+                        boolean hasEvent = false;
+                        for (int e = 0; e < EVENT_MONTHS.length; e++) {
+                            if (EVENT_MONTHS[e] == currentMonth && EVENT_DAYS[e] == day) {
+                                hasEvent = true;
+                                break;
+                            }
+                        }
+
+                        if (hasEvent) {
+                            font.setColor(new Color(0.9f, 0.1f, 0.1f, 1f));
+                        } else {
+                            font.setColor(Color.BLACK);
+                        }
+
+                        gl.setText(font, String.valueOf(day));
+                        font.draw(batch, String.valueOf(day), cx + (cellW - gl.width) / 2f, cy);
+                    }
+
+                    batch.end();
+                    com.badlogic.gdx.scenes.scene2d.utils.ScissorStack.popScissors();
+                }
+                batch.begin();
+
+            } else if (currentPhoneScreen == PhoneScreen.CLASH) {
+                float contentTop = sy + screenH - sbH - 5f;
+                float contentH = contentTop - contentBottom;
+
+                batch.end();
+                com.badlogic.gdx.math.Rectangle scissors = new com.badlogic.gdx.math.Rectangle();
+                com.badlogic.gdx.math.Rectangle clipBounds = new com.badlogic.gdx.math.Rectangle(
+                    sx, contentBottom, screenW, contentH);
+                com.badlogic.gdx.utils.viewport.Viewport vp = hudStage.getViewport();
+                com.badlogic.gdx.scenes.scene2d.utils.ScissorStack.calculateScissors(
+                    hudStage.getCamera(), vp.getScreenX(), vp.getScreenY(),
+                    vp.getScreenWidth(), vp.getScreenHeight(),
+                    batch.getTransformMatrix(), clipBounds, scissors);
+
+                if (com.badlogic.gdx.scenes.scene2d.utils.ScissorStack.pushScissors(scissors)) {
+                    batch.begin();
+                    float cardH = 90f;
+                    float cardSpacing = 10f;
+                    float cardW = screenW - 10f;
+                    float cardX = sx + 5f;
+                    int totalMuscle = (int) stats.totalMuscle();
+
+                    for (int i = 0; i < CLASH_NAMES.length; i++) {
+                        float cardY = sy + screenH - sbH - (i + 1) * (cardH + cardSpacing) + clashScrollY;
+                        boolean unlocked = isAdminMode || totalMuscle >= CLASH_MIN_MUSCLE[i];
+
+                        // Background card
+                        if (unlocked) {
+                            batch.setColor(0.9f, 0.9f, 0.9f, 1f);
+                        } else {
+                            batch.setColor(0.4f, 0.4f, 0.4f, 1f);
+                        }
+                        batch.draw(grayTexture, cardX, cardY, cardW, cardH);
+                        batch.setColor(1f, 1f, 1f, 1f);
+
+                        // Teks nama turnamen
+                        font.setColor(unlocked ? Color.BLACK : Color.DARK_GRAY);
+                        font.draw(batch, CLASH_NAMES[i], cardX + 5f, cardY + cardH - 10f);
+
+                        // Syarat
+                        if (!unlocked) {
+                            font.setColor(Color.RED);
+                            font.draw(batch, "Syarat: Total Muscle " + CLASH_MIN_MUSCLE[i] + " - " + CLASH_MAX_MUSCLE[i],
+                                cardX + 5f, cardY + cardH - 28f);
+                            font.draw(batch, "Total Muscle kamu: " + totalMuscle,
+                                cardX + 5f, cardY + cardH - 46f);
+                            font.draw(batch, "[ TERKUNCI ]", cardX + 5f, cardY + cardH - 64f);
+                        } else {
+                            font.setColor(Color.DARK_GRAY);
+                            font.draw(batch, "Total Muscle: " + CLASH_MIN_MUSCLE[i] + "-" + CLASH_MAX_MUSCLE[i],
+                                cardX + 5f, cardY + cardH - 28f);
+                            font.draw(batch, "Hadiah: +" + (int)CLASH_REWARD_UPPER[i] + " Upper, +" +
+                                    (int)CLASH_REWARD_LOWER[i] + " Lower",
+                                cardX + 5f, cardY + cardH - 46f);
+                            font.draw(batch, "Energy: +" + (int)CLASH_REWARD_ENERGY[i],
+                                cardX + 5f, cardY + cardH - 64f);
+                        }
+                    }
+                    batch.end();
+                    com.badlogic.gdx.scenes.scene2d.utils.ScissorStack.popScissors();
+                }
+                batch.begin();
+            }
+
+// Status bar dan navbar selalu tampil
             font.setColor(Color.BLACK);
             font.draw(batch, "01/01  |||  BAT", sx + 4f, sy + screenH - 4f);
-
-            // Navbar teks
             gl.setText(font, "BACK");
             font.draw(batch, "BACK", sx + screenW * 0.15f, sy + navH - 6f);
             gl.setText(font, "HOME");
@@ -1117,32 +1461,134 @@ public class GameScreen implements Screen {
             batch.end();
 
 // Deteksi klik manual
-            float hbx = bx - 70f;
-            float hsx = hbx + margin;
             float hwW = screenW * 0.28f;
             float hwH = hwW * 1.1f;
             float hwY = sy + screenH - sbH - hwH - 10f;
             float hwSpacing = (screenW - 3 * hwW) / 4f;
-            float hwx1 = hsx + hwSpacing;
-            float hwx2 = hsx + hwSpacing * 2 + hwW;
-            float hwx3 = hsx + hwSpacing * 3 + hwW * 2;
+            float hwx1 = sx + hwSpacing;
+            float hwx2 = sx + hwSpacing * 2 + hwW;
+            float hwx3 = sx + hwSpacing * 3 + hwW * 2;
 
             if (Gdx.input.justTouched()) {
                 float mx = Gdx.input.getX();
                 float my = Gdx.graphics.getHeight() - Gdx.input.getY();
+                // Hitbox BACK
+                float hBackX = sx + screenW * 0.05f;
+                float hBackW = screenW * 0.35f;
+//                float hNavH = 35f;
+//                float hNavY = sy + margin * 0.20f;  // area navbar bawah
 
-                if (mx >= hwx1 && mx <= hwx1 + hwW && my >= hwY && my <= hwY + hwH) {
-                    game.sfxEnter.play(game.sfxVolume);
-                } else if (mx >= hwx2 && mx <= hwx2 + hwW && my >= hwY && my <= hwY + hwH) {
-                    game.sfxEnter.play(game.sfxVolume);
-                } else if (mx >= hwx3 && mx <= hwx3 + hwW && my >= hwY && my <= hwY + hwH) {
-                    game.sfxEnter.play(game.sfxVolume);
+                if (mx >= hBackX && mx <= hBackX + hBackW && my >= hNavY && my <= hNavY + hNavH) {
+                    game.sfxNavigate.play(game.sfxVolume);
+                    if (currentPhoneScreen == PhoneScreen.HOME) {
+                        isPhoneOpen = false;
+                        currentPhoneScreen = PhoneScreen.HOME;
+                    } else if (currentPhoneScreen == PhoneScreen.NEWS_DETAIL) {
+                        currentPhoneScreen = PhoneScreen.NEWS;
+                        newsScrollY = 0f;
+                    } else {
+                        currentPhoneScreen = PhoneScreen.HOME;
+                        newsScrollY = 0f;
+                        dateScrollY = 0f;
+                        clashScrollY = 0f;
+                    }
+                }
+
+// Hitbox HOME
+                float hHomeX = sx + screenW * 0.45f;
+                float hHomeW = screenW * 0.5f;
+
+                if (mx >= hHomeX && mx <= hHomeX + hHomeW && my >= hNavY && my <= hNavY + hNavH) {
+                    game.sfxNavigate.play(game.sfxVolume);
+                    currentPhoneScreen = PhoneScreen.HOME;
+                }
+
+                // Hitbox widget — hanya aktif di HOME
+                if (currentPhoneScreen == PhoneScreen.HOME) {
+                    if (mx >= hwx1 && mx <= hwx1 + hwW && my >= hwY && my <= hwY + hwH) {
+                        game.sfxEnter.play(game.sfxVolume);
+                        currentPhoneScreen = PhoneScreen.NEWS;
+                        newsScrollY = 0f;
+                    } else if (mx >= hwx2 && mx <= hwx2 + hwW && my >= hwY && my <= hwY + hwH) {
+                        game.sfxEnter.play(game.sfxVolume);
+                        currentPhoneScreen = PhoneScreen.DATE;
+                        dateScrollY = 0f;
+                    } else if (mx >= hwx3 && mx <= hwx3 + hwW && my >= hwY && my <= hwY + hwH) {
+                        game.sfxEnter.play(game.sfxVolume);
+                        currentPhoneScreen = PhoneScreen.CLASH;
+                        clashScrollY = 0f;
+                    }
+                }
+
+// Hitbox berita — hanya aktif di NEWS
+                if (currentPhoneScreen == PhoneScreen.NEWS) {
+                    float imgH = 70f;
+                    float img1Y = sy + screenH - sbH - imgH - 10f;
+                    float img2Y = img1Y - imgH - 40f;
+                    float imgW = screenW - 10f;
+                    float imgX = sx + 5f;
+
+                    if (mx >= imgX && mx <= imgX + imgW && my >= img1Y - 25f && my <= img1Y + imgH) {
+                        selectedNewsIndex = 0;
+                        currentPhoneScreen = PhoneScreen.NEWS_DETAIL;
+                        game.sfxEnter.play(game.sfxVolume);
+                    } else if (mx >= imgX && mx <= imgX + imgW && my >= img2Y - 25f && my <= img2Y + imgH) {
+                        selectedNewsIndex = 1;
+                        currentPhoneScreen = PhoneScreen.NEWS_DETAIL;
+                        game.sfxEnter.play(game.sfxVolume);
+                    }
+                }
+
+                if (currentPhoneScreen == PhoneScreen.DATE) {
+                    float headerY = sy + screenH - sbH - 15f;
+                    float btnW = screenW * 0.35f;
+                    Gdx.app.log("DATE", "mx=" + mx + " my=" + my + " headerY=" + headerY + " sx=" + sx + " sx+btnW=" + (sx+btnW));
+
+
+                    // Tombol
+                    if (mx >= sx && mx <= sx + btnW && my >= headerY - 15f && my <= headerY + 5f) {
+                        currentMonth = Math.max(0, currentMonth - 1);
+                        game.sfxNavigate.play(game.sfxVolume);
+                    }
+                    // Tombol >
+                    if (mx >= sx + screenW - btnW && mx <= sx + screenW && my >= headerY - 15f && my <= headerY + 5f) {
+                        currentMonth = Math.min(11, currentMonth + 1);
+                        game.sfxNavigate.play(game.sfxVolume);
+                    }
+                }
+
+                if (currentPhoneScreen == PhoneScreen.CLASH) {
+                    float cardH = 90f;
+                    float cardSpacing = 10f;
+                    float cardW = screenW - 10f;
+                    float cardX = sx + 5f;
+                    int totalMuscle = (int) stats.totalMuscle();
+
+                    for (int i = 0; i < CLASH_NAMES.length; i++) {
+                        float cardY = sy + screenH - sbH - (i + 1) * (cardH + cardSpacing) + clashScrollY;
+                        boolean unlocked = isAdminMode || totalMuscle >= CLASH_MIN_MUSCLE[i];
+
+                        if (unlocked && mx >= cardX && mx <= cardX + cardW &&
+                            my >= cardY && my <= cardY + cardH) {
+                            if (!clashWon[i]) {  // hanya sekali per turnamen
+                                clashWon[i] = true;
+                                winNewsTitle[winNewsCount] = "Menang di " + CLASH_NAMES[i] + "!";
+                                winNewsDesc[winNewsCount] = "Player berhasil memenangkan " + CLASH_NAMES[i] +
+                                    " dan mendapatkan hadiah muscle boost!";
+                                winNewsCount++;
+                            }
+                            stats.addUpperMuscle(CLASH_REWARD_UPPER[i]);
+                            stats.addLowerMuscle(CLASH_REWARD_LOWER[i]);
+                            stats.addEnergy(CLASH_REWARD_ENERGY[i]);
+                            updateHud();  // ← tambahkan ini
+                            game.sfxEnter.play(game.sfxVolume);
+                            break;
+                        }
+                    }
                 }
 
             }
             phoneStage.act(delta);
-
-            updateHud();
             hudStage.act(delta);
             hudStage.draw();
 
@@ -1157,7 +1603,6 @@ public class GameScreen implements Screen {
                 hudStage.draw();
             }
         }
-
     }
 
     private void updateHud() {
@@ -1166,6 +1611,8 @@ public class GameScreen implements Screen {
         upperLabel   .setText("Upper: "    + (int) stats.upperMuscle);
         lowerLabel   .setText("Lower: "    + (int) stats.lowerMuscle);
         totalLabel   .setText("Total Muscle: " + (int) stats.totalMuscle());
+        adminLabel.setVisible(isAdminMode);
+
     }
 
     //suara kursor untuk menu
@@ -1216,6 +1663,12 @@ public class GameScreen implements Screen {
         float speed = 4.2f;
         float vx = 0;
         float vy = 0;
+
+        if (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) &&
+            Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)) {
+            playerBody.setLinearVelocity(0, 0);
+            return;
+        }
 
         if (Gdx.input.isKeyPressed(Input.Keys.W) || Gdx.input.isKeyPressed(Input.Keys.UP)) {
             vy = speed;
@@ -1272,17 +1725,18 @@ public class GameScreen implements Screen {
             if (action.type == Interaction.Type.FOOD) {
                 stats.addCalories(action.calDelta);
                 stats.addEnergy(action.energyDelta);
+
             } else if (action.type == Interaction.Type.EX_UPPER ||
                 action.type == Interaction.Type.EX_LOWER) {
-                if (stats.isTired()) return;
-                stats.addEnergy(-action.energyCost);
+                if (!isAdminMode && stats.isTired()) return; // ← ubah ini
+                if (!isAdminMode) stats.addEnergy(-action.energyCost);
                 stats.addCalories(action.calDelta);
                 stats.addUpperMuscle(action.upperDelta);
                 stats.addLowerMuscle(action.lowerDelta);
             } else if (action.type == Interaction.Type.REST) {
                 stats.daysRemaining--;
                 stats.addEnergy(PlayerStats.MAX_ENERGY);
-                stats.addCalories(-50f);
+                stats.addCalories(-100f);
                 showSleepScreen = true;
                 sleepPhase = SleepPhase.FADE_IN;
                 sleepAlpha = 0f;
@@ -1348,6 +1802,7 @@ public class GameScreen implements Screen {
         icoUpper.dispose();
         icoLower.dispose();
         icoTotal.dispose();
+        grayTexture.dispose();
     }
 
 }
