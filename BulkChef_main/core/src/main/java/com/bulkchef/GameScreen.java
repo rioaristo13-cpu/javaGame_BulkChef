@@ -62,7 +62,7 @@ public class GameScreen implements Screen {
     private Table hudRoot;
     private final PlayerStats stats = new PlayerStats();
     private Stage hudStage;
-    private Label caloriesLabel, energyLabel, upperLabel, lowerLabel, totalLabel, sleepLabel;
+    private Label caloriesLabel, energyLabel, upperLabel, lowerLabel, totalLabel;
     private Label adminLabel;
 
     private TiledMap map;
@@ -628,11 +628,7 @@ public class GameScreen implements Screen {
 
         private void buildHud() {
             hudStage = new Stage(new ScreenViewport());
-            sleepLabel = new Label("", game.skin, "big");
-            sleepLabel.setVisible(false);
-            sleepLabel.setFillParent(true);
-            sleepLabel.setAlignment(com.badlogic.gdx.utils.Align.center);
-            hudStage.addActor(sleepLabel);
+
 
             hudRoot = new Table();
             hudRoot.setFillParent(true);
@@ -1087,10 +1083,15 @@ public class GameScreen implements Screen {
             } else {
                 sleepAlpha = Math.max(0f, sleepAlpha - delta * speed);
                 if (sleepAlpha <= 0f) {
+
                     showSleepScreen = false;
                     isPaused = false;
-                    sleepLabel.setVisible(false);
+
                     hudRoot.setVisible(true);
+
+                    if (phoneBtn != null) {
+                        phoneBtn.setVisible(true);
+                    }
                 }
             }
 
@@ -1100,10 +1101,8 @@ public class GameScreen implements Screen {
             shapeRenderer.rect(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
             shapeRenderer.end();
 
-            sleepLabel.setVisible(true);
-            sleepLabel.getColor().a = sleepAlpha;
-            hudStage.act(0);
-            hudStage.draw();
+            hudStage.getBatch().begin();
+            hudStage.getBatch().end();
         }
 
         //Render debug box kolisi
@@ -1652,8 +1651,6 @@ public class GameScreen implements Screen {
 
                 } else if (showSleepScreen) {
 
-                    hudStage.act(0);
-                    hudStage.draw();
                 }
             }
         }
@@ -1873,10 +1870,19 @@ public class GameScreen implements Screen {
 
                 chickenSelectedIndex = 0;
 
-            } else if (action.type == Interaction.Type.EX_UPPER ||
-                action.type == Interaction.Type.EX_LOWER) {
-                if (!isAdminMode && stats.isTired()) return;
-                if (!isAdminMode) stats.addEnergy(-action.energyCost);
+            } else if (
+                action.type == Interaction.Type.EX_UPPER ||
+                    action.type == Interaction.Type.EX_LOWER
+            ) {
+                if (!isAdminMode && stats.energy <= 0) {
+                    return;
+                }
+                if (!isAdminMode && stats.cal <= 0) {
+                    return;
+                }
+                if (!isAdminMode) {
+                    stats.addEnergy(-action.energyCost);
+                }
                 stats.addCalories(action.calDelta);
                 stats.addUpperMuscle(action.upperDelta);
                 stats.addLowerMuscle(action.lowerDelta);
@@ -1889,6 +1895,9 @@ public class GameScreen implements Screen {
                 isPaused = true;
                 hudRoot.setVisible(false);
                 promptLabel.setVisible(false);
+                if (phoneBtn != null) {
+                    phoneBtn.setVisible(false);
+                }
             }
         }
 
