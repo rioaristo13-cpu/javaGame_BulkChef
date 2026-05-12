@@ -3812,7 +3812,7 @@ sceneComposer: {
 							deletable: false
 							parent: null
 						}
-						text: A/W/S/D - Move
+						text: A/W/S/D - Jalan
 						passwordCharacter: •
 						passwordMode: false
 						alignment: 1

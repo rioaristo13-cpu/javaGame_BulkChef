@@ -6,7 +6,6 @@ public class PlayerStats {
     public static final float MAX_UPPER_MUSCLE = 50f;
     public static final float MAX_LOWER_MUSCLE = 50f;
 
-    public int daysRemaining = 7;
 
     public void addUpperMuscle(float amount) {
         upperMuscle = Math.max(0, Math.min(upperMuscle + amount, MAX_UPPER_MUSCLE));
@@ -35,5 +34,4 @@ public class PlayerStats {
     public float energy = 100f;
     public float upperMuscle = 0f;
     public float lowerMuscle = 0f;
-//    public int daysRemaining = 30;
 }

@@ -185,7 +185,7 @@
 						"clazz": "com.badlogic.gdx.scenes.scene2d.ui.TextField",
 						"name": "default"
 					},
-					"text": "A/W/S/D - Move",
+					"text": "A/W/S/D - Jalan",
 					"passwordCharacter": "•",
 					"passwordMode": false,
 					"alignment": 1,

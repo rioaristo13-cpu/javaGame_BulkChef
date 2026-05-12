@@ -1,318 +1,318 @@
 {
-"com.badlogic.gdx.graphics.g2d.BitmapFont": {
-	"button": {
-		"file": "font-button-export.fnt",
-		"scaledSize": -1,
-		"markupEnabled": false,
-		"flip": false
-	},
-	"font": {
-		"file": "font-export.fnt",
-		"scaledSize": -1,
-		"markupEnabled": false,
-		"flip": false
-	},
-	"title": {
-		"file": "font-title-export.fnt",
-		"scaledSize": -1,
-		"markupEnabled": false,
-		"flip": false
+com.badlogic.gdx.graphics.g2d.BitmapFont: {
+	button: {
+		file: font-button-export.fnt
+		scaledSize: -1
+		markupEnabled: false
+		flip: false
 	}
-},
-"com.badlogic.gdx.graphics.Color": {
-	"black": {
-		"r": 0,
-		"g": 0,
-		"b": 0,
-		"a": 1
-	},
-	"gray": {
-		"r": 0.7466668,
-		"g": 0.7466668,
-		"b": 0.7466668,
-		"a": 1
-	},
-	"kuning": {
-		"r": 0.93333334,
-		"g": 1,
-		"b": 0,
-		"a": 1
-	},
-	"white": {
-		"r": 1,
-		"g": 1,
-		"b": 1,
-		"a": 1
+	font: {
+		file: font-export.fnt
+		scaledSize: -1
+		markupEnabled: false
+		flip: false
 	}
-},
-"com.badlogic.gdx.scenes.scene2d.ui.Skin$TintedDrawable": {
-	"cyan": {
-		"name": "white",
-		"color": {
-			"r": 0.30333334,
-			"g": 0.96412176,
-			"b": 1,
-			"a": 1
-		}
-	},
-	"background_bg": {
-		"name": "white-pixel",
-		"color": "black"
-	},
-	"panel_bg": {
-		"name": "white-pixel",
-		"color": {
-			"r": 0.15,
-			"g": 0.15,
-			"b": 0.15,
-			"a": 0.9
-		}
-	},
-	"phone_screen": {
-		"name": "white-pixel",
-		"color": {
-			"r": 0.05,
-			"g": 0.05,
-			"b": 0.1,
-			"a": 1.0
-		}
-	},
-	"phone_body": {
-		"name": "white-pixel",
-		"color": {
-			"r": 0.12,
-			"g": 0.12,
-			"b": 0.12,
-			"a": 1.0
+	title: {
+		file: font-title-export.fnt
+		scaledSize: -1
+		markupEnabled: false
+		flip: false
+	}
+}
+com.badlogic.gdx.graphics.Color: {
+	black: {
+		r: 0
+		g: 0
+		b: 0
+		a: 1
+	}
+	gray: {
+		r: 0.7466668
+		g: 0.7466668
+		b: 0.7466668
+		a: 1
+	}
+	kuning: {
+		r: 0.93333334
+		g: 1
+		b: 0
+		a: 1
+	}
+	white: {
+		r: 1
+		g: 1
+		b: 1
+		a: 1
+	}
+}
+com.badlogic.gdx.scenes.scene2d.ui.Skin$TintedDrawable: {
+	cyan: {
+		name: white
+		color: {
+			r: 0.30333334
+			g: 0.96412176
+			b: 1
+			a: 1
 		}
 	}
-},
-"com.badlogic.gdx.scenes.scene2d.ui.Button$ButtonStyle": {
-	"default": {
-		"up": "button",
-		"down": "button-pressed",
-		"over": "button-highlighted",
-		"focused": "button-highlighted"
+	background_bg: {
+		name: white-pixel
+		color: black
 	}
-},
-"com.badlogic.gdx.scenes.scene2d.ui.CheckBox$CheckBoxStyle": {
-	"default": {
-		"checkboxOn": "checkbox-on",
-		"checkboxOff": "checkbox",
-		"font": "button",
-		"fontColor": "black"
-	},
-	"radio": {
-		"checkboxOn": "radio-on",
-		"checkboxOff": "radio",
-		"font": "button",
-		"fontColor": "black"
+	panel_bg: {
+		name: white-pixel
+		color: {
+			r: 0.15
+			g: 0.15
+			b: 0.15
+			a: 0.9
+		}
 	}
-},
-"com.badlogic.gdx.scenes.scene2d.ui.ImageButton$ImageButtonStyle": {
-	"default": {
-		"up": "button",
-		"down": "button-pressed",
-		"over": "button-highlighted"
+	phone_screen: {
+		name: white-pixel
+		color: {
+			r: 0.05
+			g: 0.05
+			b: 0.1
+			a: 1
+		}
 	}
-},
-"com.badlogic.gdx.scenes.scene2d.ui.Label$LabelStyle": {
-	"default": {
-		"font": "font",
-		"fontColor": "black"
-	},
-	"narration": {
-		"font": "font",
-		"fontColor": "black",
-		"background": "narration-box"
-	},
-	"big": {
-		"font": "button",
-		"fontColor": "white"
-	},
-	"title": {
-		"font": "title",
-		"fontColor": "white"
-	},
-	"alt": {
-		"font": "font",
-		"fontColor": "black",
-		"background": "window"
-	},
-	"half-tone": {
-		"font": "button",
-		"fontColor": "black",
-		"background": "half-tone-box"
+	phone_body: {
+		name: white-pixel
+		color: {
+			r: 0.12
+			g: 0.12
+			b: 0.12
+			a: 1
+		}
 	}
-},
-"com.badlogic.gdx.scenes.scene2d.ui.List$ListStyle": {
-	"default": {
-		"font": "font",
-		"fontColorSelected": "black",
-		"fontColorUnselected": "black",
-		"selection": "cyan"
-	},
-	"select-box": {
-		"font": "font",
-		"fontColorSelected": "black",
-		"fontColorUnselected": "black",
-		"selection": "cyan",
-		"background": "select-box-list"
-	},
-	"select-box-big": {
-		"font": "button",
-		"fontColorSelected": "black",
-		"fontColorUnselected": "black",
-		"selection": "cyan",
-		"background": "select-box-big-list"
+}
+com.badlogic.gdx.scenes.scene2d.ui.Button$ButtonStyle: {
+	default: {
+		up: button
+		down: button-pressed
+		over: button-highlighted
+		focused: button-highlighted
 	}
-},
-"com.badlogic.gdx.scenes.scene2d.ui.ProgressBar$ProgressBarStyle": {
-	"default-horizontal": {
-		"background": "progress-bar",
-		"knobBefore": "progress-bar-knob"
-	},
-	"default-vertical": {
-		"background": "progress-bar",
-		"knobBefore": "progress-bar-knob"
+}
+com.badlogic.gdx.scenes.scene2d.ui.CheckBox$CheckBoxStyle: {
+	default: {
+		checkboxOn: checkbox-on
+		checkboxOff: checkbox
+		font: button
+		fontColor: black
 	}
-},
-"com.badlogic.gdx.scenes.scene2d.ui.ScrollPane$ScrollPaneStyle": {
-	"default": {
-		"hScrollKnob": "scrollbar-horizontal",
-		"vScrollKnob": "scrollbar-vertical"
-	},
-	"select-box": {
-		"background": "select-box-list",
-		"hScrollKnob": "scrollbar-horizontal",
-		"vScrollKnob": "scrollbar-vertical"
+	radio: {
+		checkboxOn: radio-on
+		checkboxOff: radio
+		font: button
+		fontColor: black
 	}
-},
-"com.badlogic.gdx.scenes.scene2d.ui.SelectBox$SelectBoxStyle": {
-	"default": {
-		"font": "font",
-		"fontColor": "black",
-		"background": "select-box",
-		"scrollStyle": "default",
-		"listStyle": "select-box",
-		"backgroundOpen": "select-box-open"
-	},
-	"big": {
-		"font": "button",
-		"fontColor": "black",
-		"background": "select-box-big",
-		"scrollStyle": "default",
-		"listStyle": "select-box-big",
-		"backgroundOpen": "select-box-big-open"
+}
+com.badlogic.gdx.scenes.scene2d.ui.ImageButton$ImageButtonStyle: {
+	default: {
+		up: button
+		down: button-pressed
+		over: button-highlighted
 	}
-},
-"com.badlogic.gdx.scenes.scene2d.ui.Slider$SliderStyle": {
-	"default-horizontal": {
-		"background": "slider",
-		"knob": "slider-knob"
-	},
-	"default-vertical": {
-		"background": "slider",
-		"knob": "slider-knob"
+}
+com.badlogic.gdx.scenes.scene2d.ui.Label$LabelStyle: {
+	default: {
+		font: font
+		fontColor: black
 	}
-},
-"com.badlogic.gdx.scenes.scene2d.ui.TextButton$TextButtonStyle": {
-	"default": {
-		"font": "button",
-		"fontColor": "black",
-		"downFontColor": "black",
-		"overFontColor": "kuning",
-		"focusedFontColor": "kuning",
-		"up": "button",
-		"down": "button-pressed",
-		"over": "button-highlighted",
-		"focused": "button-highlighted"
-	},
-	"resume-btn": {
-		"font": "button",
-		"fontColor": "black",
-		"downFontColor": "black",
-		"overFontColor": "kuning",
-		"focusedFontColor": "kuning",
-		"up": "button",
-		"down": "button-pressed",
-		"over": "button-highlighted"
-	},
-	"pause-btn": {
-		"font": "button",
-		"fontColor": "black",
-		"downFontColor": "gray",
-		"overFontColor": "kuning",
-		"focusedFontColor": "kuning",
-		"up": "button",
-		"down": "button-pressed",
-		"over": "button-highlighted",
-		"focused": "button-highlighted"
-	},
-	"option-btn": {
-		"font": "button",
-		"fontColor": "black",
-		"downFontColor": "black",
-		"overFontColor": "kuning",
-		"focusedFontColor": "kuning",
-		"up": "button",
-		"down": "button-pressed",
-		"over": "button-highlighted",
-		"focused": "button-highlighted"
-	},
-	"Quit-btn": {
-		"font": "button",
-		"fontColor": "black",
-		"downFontColor": "black",
-		"overFontColor": "kuning",
-		"up": "button",
-		"down": "button-pressed",
-		"over": "button-highlighted",
-		"focused": "button-highlighted"
-	},
-	"phone-btn": {
-		"font": "font",
-		"fontColor":"black",
-		"downFontColor": "black",
-		"overFontColor": "kuning",
-		"up": "button",
-		"down":"button-pressed",
-		"over":"button-highlighted"
+	narration: {
+		font: font
+		fontColor: black
+		background: narration-box
 	}
-},
-"com.badlogic.gdx.scenes.scene2d.ui.TextField$TextFieldStyle": {
-	"default": {
-		"font": "font",
-		"fontColor": "black",
-		"background": "text-field",
-		"cursor": "cursor",
-		"selection": "cyan",
-		"messageFontColor": "gray"
+	big: {
+		font: button
+		fontColor: white
 	}
-},
-"com.badlogic.gdx.scenes.scene2d.ui.TextTooltip$TextTooltipStyle": {
-	"default": {
-		"label": "alt"
-	},
-	"alt": {
-		"label": "narration"
+	title: {
+		font: title
+		fontColor: white
 	}
-},
-"com.badlogic.gdx.scenes.scene2d.ui.Tree$TreeStyle": {
-	"default": {
-		"plus": "plus",
-		"minus": "minus",
-		"selection": "cyan"
+	alt: {
+		font: font
+		fontColor: black
+		background: window
 	}
-},
-"com.badlogic.gdx.scenes.scene2d.ui.Window$WindowStyle": {
-	"default": {
-		"background": "window",
-		"titleFont": "font"
-	},
-	"alt": {
-		"background": "narration-box",
-		"titleFont": "font"
+	half-tone: {
+		font: button
+		fontColor: black
+		background: half-tone-box
+	}
+}
+com.badlogic.gdx.scenes.scene2d.ui.List$ListStyle: {
+	default: {
+		font: font
+		fontColorSelected: black
+		fontColorUnselected: black
+		selection: cyan
+	}
+	select-box: {
+		font: font
+		fontColorSelected: black
+		fontColorUnselected: black
+		selection: cyan
+		background: select-box-list
+	}
+	select-box-big: {
+		font: button
+		fontColorSelected: black
+		fontColorUnselected: black
+		selection: cyan
+		background: select-box-big-list
+	}
+}
+com.badlogic.gdx.scenes.scene2d.ui.ProgressBar$ProgressBarStyle: {
+	default-horizontal: {
+		background: progress-bar
+		knobBefore: progress-bar-knob
+	}
+	default-vertical: {
+		background: progress-bar
+		knobBefore: progress-bar-knob
+	}
+}
+com.badlogic.gdx.scenes.scene2d.ui.ScrollPane$ScrollPaneStyle: {
+	default: {
+		hScrollKnob: scrollbar-horizontal
+		vScrollKnob: scrollbar-vertical
+	}
+	select-box: {
+		background: select-box-list
+		hScrollKnob: scrollbar-horizontal
+		vScrollKnob: scrollbar-vertical
+	}
+}
+com.badlogic.gdx.scenes.scene2d.ui.SelectBox$SelectBoxStyle: {
+	default: {
+		font: font
+		fontColor: black
+		background: select-box
+		scrollStyle: default
+		listStyle: select-box
+		backgroundOpen: select-box-open
+	}
+	big: {
+		font: button
+		fontColor: black
+		background: select-box-big
+		scrollStyle: default
+		listStyle: select-box-big
+		backgroundOpen: select-box-big-open
+	}
+}
+com.badlogic.gdx.scenes.scene2d.ui.Slider$SliderStyle: {
+	default-horizontal: {
+		background: slider
+		knob: slider-knob
+	}
+	default-vertical: {
+		background: slider
+		knob: slider-knob
+	}
+}
+com.badlogic.gdx.scenes.scene2d.ui.TextButton$TextButtonStyle: {
+	default: {
+		font: button
+		fontColor: black
+		downFontColor: black
+		overFontColor: kuning
+		focusedFontColor: kuning
+		up: button
+		down: button-pressed
+		over: button-highlighted
+		focused: button-highlighted
+	}
+	resume-btn: {
+		font: button
+		fontColor: black
+		downFontColor: black
+		overFontColor: kuning
+		focusedFontColor: kuning
+		up: button
+		down: button-pressed
+		over: button-highlighted
+	}
+	pause-btn: {
+		font: button
+		fontColor: black
+		downFontColor: gray
+		overFontColor: kuning
+		focusedFontColor: kuning
+		up: button
+		down: button-pressed
+		over: button-highlighted
+		focused: button-highlighted
+	}
+	option-btn: {
+		font: button
+		fontColor: black
+		downFontColor: black
+		overFontColor: kuning
+		focusedFontColor: kuning
+		up: button
+		down: button-pressed
+		over: button-highlighted
+		focused: button-highlighted
+	}
+	Quit-btn: {
+		font: button
+		fontColor: black
+		downFontColor: black
+		overFontColor: kuning
+		up: button
+		down: button-pressed
+		over: button-highlighted
+		focused: button-highlighted
+	}
+	phone-btn: {
+		font: font
+		fontColor: black
+		downFontColor: black
+		overFontColor: kuning
+		up: button
+		down: button-pressed
+		over: button-highlighted
+	}
+}
+com.badlogic.gdx.scenes.scene2d.ui.TextField$TextFieldStyle: {
+	default: {
+		font: font
+		fontColor: black
+		background: text-field
+		cursor: cursor
+		selection: cyan
+		messageFontColor: gray
+	}
+}
+com.badlogic.gdx.scenes.scene2d.ui.TextTooltip$TextTooltipStyle: {
+	default: {
+		label: alt
+	}
+	alt: {
+		label: narration
+	}
+}
+com.badlogic.gdx.scenes.scene2d.ui.Tree$TreeStyle: {
+	default: {
+		plus: plus
+		minus: minus
+		selection: cyan
+	}
+}
+com.badlogic.gdx.scenes.scene2d.ui.Window$WindowStyle: {
+	default: {
+		background: window
+		titleFont: font
+	}
+	alt: {
+		background: narration-box
+		titleFont: font
 	}
 }
 }

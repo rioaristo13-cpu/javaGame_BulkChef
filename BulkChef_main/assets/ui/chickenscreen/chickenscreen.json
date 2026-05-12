@@ -1,0 +1,117 @@
+{
+"children": [
+	{
+		"class": "Table",
+		"cells": [
+			{
+				"child": {
+					"class": "Image",
+					"name": null,
+					"drawable": "chicken",
+					"scaling": "fill",
+					"touchable": "disabled",
+					"visible": true
+				},
+				"row": 0,
+				"column": 0,
+				"padLeft": 0,
+				"padRight": 0,
+				"padTop": 0,
+				"padBottom": 0,
+				"spaceLeft": 0,
+				"spaceRight": 0,
+				"spaceTop": 0,
+				"spaceBottom": 0,
+				"expandX": false,
+				"expandY": false,
+				"fillX": false,
+				"fillY": false,
+				"growX": false,
+				"growY": false,
+				"alignment": 1,
+				"minWidth": 0,
+				"minHeight": 0,
+				"maxWidth": 320,
+				"maxHeight": 320,
+				"preferredWidth": 320,
+				"preferredHeight": 320,
+				"uniformX": false,
+				"uniformY": false,
+				"colSpan": 1
+			},
+			{
+				"child": {
+					"class": "Image",
+					"name": null,
+					"drawable": "faktaayam",
+					"scaling": "fit",
+					"touchable": "disabled",
+					"visible": true
+				},
+				"row": 0,
+				"column": 1,
+				"padLeft": 0,
+				"padRight": 0,
+				"padTop": 0,
+				"padBottom": 0,
+				"spaceLeft": 0,
+				"spaceRight": 0,
+				"spaceTop": 0,
+				"spaceBottom": 0,
+				"expandX": false,
+				"expandY": false,
+				"fillX": false,
+				"fillY": false,
+				"growX": false,
+				"growY": false,
+				"alignment": 1,
+				"minWidth": -1,
+				"minHeight": -1,
+				"maxWidth": 480,
+				"maxHeight": -1,
+				"preferredWidth": -1,
+				"preferredHeight": -1,
+				"uniformX": false,
+				"uniformY": false,
+				"colSpan": 1
+			},
+			{
+				"child": {
+					"class": "TextButton",
+					"name": "chickenButton",
+					"text": "Masak Ayam",
+					"style": {
+						"clazz": "com.badlogic.gdx.scenes.scene2d.ui.TextButton",
+						"name": "default"
+					},
+					"touchable": "enabled",
+					"visible": true
+				},
+				"row": 2,
+				"column": 0,
+				"colSpan": 2,
+				"padTop": 20,
+				"alignment": 1,
+				"preferredWidth": 220,
+				"preferredHeight": 60
+			}
+		],
+		"name": null,
+		"background": null,
+		"color": null,
+		"padLeft": 0,
+		"padRight": 0,
+		"padTop": 0,
+		"padBottom": 0,
+		"paddingEnabled": false,
+		"alignment": 1,
+		"fillParent": true,
+		"touchable": "childrenOnly",
+		"visible": true
+	}
+],
+"backgroundColor": null,
+"skinPath": "skin.json",
+"packageString": "com.mygdx.game",
+"classString": "Core"
+}

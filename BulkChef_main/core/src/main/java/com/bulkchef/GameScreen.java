@@ -28,6 +28,9 @@ import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.scenes.scene2d.*;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.*;
@@ -52,6 +55,8 @@ public class GameScreen implements Screen {
 
     //Tekstur ikon UI
     private Image iconCalories, iconEnergy, iconUpper, iconLower, iconTotal;
+    private Texture phoneTex;
+    private ImageButton phoneBtn;
 
     //UI
     private Table hudRoot;
@@ -93,6 +98,14 @@ public class GameScreen implements Screen {
     private Stage stage;
     private boolean isPaused = false;
     private boolean inOptionMenu = false;
+    private Stage winStage;
+    private Table winGroup;
+
+    private TextButton winMainMenuButton;
+    private TextButton winQuitButton;
+
+    private boolean showVictoryScreen = false;
+    private int winSelectedIndex = 0;
 
     private Slider musicSlider;
     private Slider sfxSlider;
@@ -111,31 +124,22 @@ public class GameScreen implements Screen {
     // Field HP
     private Stage phoneStage;
     private Table phoneGroup;
-    private TextButton newsBtn, dateBtn, tournamentBtn;
+
+    //Field nutrisi
+    private Stage chickenStage;
+    private Table chickenGroup;
+    private TextButton chickenButton;
+    private boolean chickenScreenOpen = false;
+    private int chickenSelectedIndex = 0;
+
+    private TextButton tournamentBtn;
     private boolean isPhoneOpen = false;
-    private enum PhoneScreen {HOME, NEWS, NEWS_DETAIL, DATE, CLASH}
+    private enum PhoneScreen {HOME, CLASH}
     private PhoneScreen currentPhoneScreen = PhoneScreen.HOME;
-    private int selectedNewsIndex = 0;
-    private float newsScrollY = 0f;
-    private float newsDetailScrollY = 0f;
-    private float dateScrollY = 0f;
     private float clashScrollY = 0f;
     private com.badlogic.gdx.InputAdapter scrollAdapter;
     private Texture grayTexture;
 
-    private boolean[] clashWon = new boolean[4]; // track turnamen yang sudah dimenangkan
-    private String[] winNewsTitle = new String[4];
-    private String[] winNewsDesc = new String[4];
-    private int winNewsCount = 0;
-
-    private static final String[] NEWS_TITLE = {
-        "Gym Baru Dibuka di Kota!",
-        "Turnamen Bulking Minggu Ini"
-    };
-    private static final String[] NEWS_DESC = {
-        "Fasilitas lengkap tersedia. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
-        "Daftar sekarang! Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut enim ad minim veniam, quis nostrud exercitation."
-    };
 
     // Tiled uses pixels, Box2D uses meters — scale down
     private static final float PPM = 16f; // pixels per meter
@@ -154,17 +158,6 @@ public class GameScreen implements Screen {
     private static final float VIRTUAL_W = 320f / PPM;
     private static final float VIRTUAL_H = 180f / PPM;
 
-    // Kalender
-    private int currentMonth = 0; // 0 = Januari, 11 = Desember
-    private static final int CALENDAR_YEAR = 2024;
-    private static final int[] EVENT_MONTHS = {0, 3, 9}; // Jan, Apr, Oct
-    private static final int[] EVENT_DAYS = {1, 1, 1};
-    private static final String[] EVENT_NAMES = {"Novice - Open Classic", "Advance - IFBB Pro", "Pro - Mr. Olympia"};
-    private static final String[] MONTH_NAMES = {
-        "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-        "Juli", "Agustus", "September", "Oktober", "November", "Desember"
-    };
-    private static final int[] DAYS_IN_MONTH = {31,29,31,30,31,30,31,31,30,31,30,31}; // 2024 leap year
     private boolean isAdminMode = false;
 
     private static final String[] CLASH_NAMES = {
@@ -173,11 +166,8 @@ public class GameScreen implements Screen {
         "Advance - IFBB Pro",
         "Pro - Mr. Olympia"
     };
-    private static final int[] CLASH_MIN_MUSCLE = {0, 0, 61, 86};
-    private static final int[] CLASH_MAX_MUSCLE = {999, 60, 85, 100};
-    private static final float[] CLASH_REWARD_UPPER = {2, 5, 10, 15};
-    private static final float[] CLASH_REWARD_LOWER = {2, 5, 10, 15};
-    private static final float[] CLASH_REWARD_ENERGY = {10, 15, 25, 100};
+    private static final int[] CLASH_MIN_MUSCLE = {10, 25, 50, 100};
+    private boolean[] clashComplete = new boolean[CLASH_NAMES.length];
 
     private static class PropEntry {
         float x, y, w, h;
@@ -226,7 +216,7 @@ public class GameScreen implements Screen {
             stats.energy = saveData.energy;
             stats.upperMuscle = saveData.upperMuscle;
             stats.lowerMuscle = saveData.lowerMuscle;
-            stats.daysRemaining = saveData.daysRemaining;
+
         }
 
         camera = new OrthographicCamera();
@@ -240,12 +230,15 @@ public class GameScreen implements Screen {
 
         loadCollisionLayer();
         loadInteractionLayer();
-        interactions.put("treadmill",  new Interaction("Run",   Interaction.Type.EX_LOWER, -805f, 0, 0,   2.0f, 20f));
-        interactions.put("benchpress", new Interaction("Bench", Interaction.Type.EX_UPPER, -125f, 0, 2.5f, 0,   25f));
-        interactions.put("cycling",    new Interaction("Ride",  Interaction.Type.EX_LOWER, -75f, 0, 0,   1.5f, 18f));
-        interactions.put("dumbell",    new Interaction("Lift",  Interaction.Type.EX_UPPER, -95f, 0, 1.5f, 0,   22f));
-        interactions.put("kitchen",    new Interaction("Cook",        Interaction.Type.FOOD,    500f, 30f, 0, 0, 0f));
-        interactions.put("bed", new Interaction("Sleep", Interaction.Type.REST, 0, 0, 0, 0, 0));
+
+        //Interaksi objek objek di game dengan skor
+        interactions.put("treadmill",  new Interaction("Run",   Interaction.Type.EX_LOWER,  -240f, 0, 0,    5f,10f));
+        interactions.put("benchpress", new Interaction("Bench", Interaction.Type.EX_UPPER,  -250f, 0, 5f,  0,  10f));
+        interactions.put("cycling",    new Interaction("Ride",  Interaction.Type.EX_LOWER,  -230f, 0, 0,    5f,10f));
+        interactions.put("dumbell",    new Interaction("Lift",  Interaction.Type.EX_UPPER,  -220f, 0, 5f,  0,  10f));
+        interactions.put("kitchen",    new Interaction("Cook",  Interaction.Type.FOOD,      1000f, 0f,0,    0,  0f));
+        interactions.put("bed",        new Interaction("Sleep", Interaction.Type.REST,      0,     0, 0,    0,  0));
+
         loadPropsLayer();
 
         //Loading animasi player
@@ -444,35 +437,130 @@ public class GameScreen implements Screen {
         }
 
         phoneStage = new Stage(new ScreenViewport());
+
+        chickenStage = new Stage(new ScreenViewport());
+
+        SceneComposerStageBuilder chickenBuilder =
+            new SceneComposerStageBuilder();
+
+        chickenBuilder.build(
+            chickenStage,
+            game.skin,
+            Gdx.files.internal("ui/chickenscreen/chickenscreen.json")
+        );
+
+        chickenGroup =
+            (Table) chickenStage.getRoot().getChildren().first();
+
+        chickenButton =
+            chickenStage.getRoot().findActor("chickenButton");
+
+        if (chickenButton != null) {
+
+            chickenButton.addListener(new ChangeListener() {
+
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
+
+                    game.sfxEnter.play(game.sfxVolume);
+
+                    Interaction kitchen =
+                        interactions.get("kitchen");
+
+                    if (kitchen != null) {
+
+                        stats.addCalories(kitchen.calDelta);
+                        stats.addEnergy(kitchen.energyDelta);
+                    }
+
+                    chickenScreenOpen = false;
+                    chickenStage.setKeyboardFocus(null);
+
+                    hudRoot.setVisible(true);
+
+                    if (phoneBtn != null) {
+                        phoneBtn.setVisible(true);
+                    }
+
+                    Gdx.input.setInputProcessor(
+                        new InputMultiplexer(hudStage, scrollAdapter)
+                    );
+
+                    if (chickenGroup != null) {
+                        chickenGroup.setVisible(false);
+                    }
+                }
+            });
+        }
+
+        winStage = new Stage(new ScreenViewport());
+
+        SceneComposerStageBuilder winBuilder =
+            new SceneComposerStageBuilder();
+
+        winBuilder.build(
+            winStage,
+            game.skin,
+            Gdx.files.internal("ui/winscreen/winscreen.json")
+        );
+
+        winGroup = winStage.getRoot().findActor("pausemenu");
+
+        winMainMenuButton = winStage.getRoot().findActor("mainmenu");
+        winQuitButton     = winStage.getRoot().findActor("quit");
+
+        if (winGroup != null) {
+            winGroup.setVisible(false);
+        }
+
+        if (winMainMenuButton != null) {
+
+            winMainMenuButton.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
+
+                    game.sfxEnter.play(game.sfxVolume);
+
+                    SaveData.save(
+                        stats,
+                        playerBody.getPosition().x,
+                        playerBody.getPosition().y
+                    );
+
+                    game.setScreen(new MainMenuScreen(game));
+                }
+            });
+        }
+
+        if (winQuitButton != null) {
+
+            winQuitButton.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
+
+                    game.sfxEnter.play(game.sfxVolume);
+
+                    Gdx.app.exit();
+                }
+            });
+        }
+
         phoneStage.getViewport().update(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true);
 
         SceneComposerStageBuilder phoneBuilder = new SceneComposerStageBuilder();
         phoneBuilder.build(phoneStage, game.skin, Gdx.files.internal("ui/phone/phone.json"));
 
         phoneGroup    = phoneStage.getRoot().findActor("phonegroup");
-        newsBtn       = phoneStage.getRoot().findActor("newsbtn");
-        dateBtn       = phoneStage.getRoot().findActor("datebtn");
         tournamentBtn = phoneStage.getRoot().findActor("tournamentbtn");
 
 // Sembunyikan background bawaan button (kita gambar sendiri)
-        for (TextButton btn : new TextButton[]{newsBtn, dateBtn, tournamentBtn}) {
+        for (TextButton btn : new TextButton[]{tournamentBtn}) {
             if (btn == null) continue;
             btn.getStyle().up = null;
             btn.getStyle().down = null;
             btn.getStyle().over = null;
             btn.getStyle().focused = null;
         }
-
-        if (newsBtn != null) newsBtn.addListener(new ChangeListener() {
-            @Override public void changed(ChangeEvent e, Actor a) {
-                game.sfxEnter.play(game.sfxVolume);
-            }
-        });
-        if (dateBtn != null) dateBtn.addListener(new ChangeListener() {
-            @Override public void changed(ChangeEvent e, Actor a) {
-                game.sfxEnter.play(game.sfxVolume);
-            }
-        });
         if (tournamentBtn != null) tournamentBtn.addListener(new ChangeListener() {
             @Override public void changed(ChangeEvent e, Actor a) {
                 game.sfxEnter.play(game.sfxVolume);
@@ -484,19 +572,9 @@ public class GameScreen implements Screen {
             public boolean scrolled(float amountX, float amountY) {
                 if (!isPhoneOpen) return false;
                 float scrollAmount = amountY * 20f;
-                if (currentPhoneScreen == PhoneScreen.NEWS) {
-                    newsScrollY += scrollAmount;
-                    Gdx.app.log("SCROLL", "newsScrollY=" + newsScrollY);
-                } else if (currentPhoneScreen == PhoneScreen.NEWS_DETAIL) {
-                    newsDetailScrollY += scrollAmount;
-                } else if (currentPhoneScreen == PhoneScreen.DATE) {
-                    dateScrollY += scrollAmount;
-                } else if (currentPhoneScreen == PhoneScreen.CLASH) {
+                if (currentPhoneScreen == PhoneScreen.CLASH) {
                     clashScrollY += scrollAmount;
                 }
-                newsScrollY = Math.max(0, newsScrollY);
-                newsDetailScrollY = Math.max(0, newsDetailScrollY);
-                dateScrollY = Math.max(0, dateScrollY);
                 clashScrollY = Math.max(0, clashScrollY);
                 return true;
             }
@@ -515,14 +593,8 @@ public class GameScreen implements Screen {
             public boolean scrolled(float amountX, float amountY) {
                 if (!isPhoneOpen) return false;
                 float scrollAmount = amountY * 20f;
-                if (currentPhoneScreen == PhoneScreen.NEWS) newsScrollY += scrollAmount;
-                else if (currentPhoneScreen == PhoneScreen.NEWS_DETAIL) newsDetailScrollY += scrollAmount;
-                else if (currentPhoneScreen == PhoneScreen.DATE) dateScrollY += scrollAmount;
-                else if (currentPhoneScreen == PhoneScreen.CLASH) clashScrollY += scrollAmount;
+                if (currentPhoneScreen == PhoneScreen.CLASH) clashScrollY += scrollAmount;
                 // Clamp ke minimum 0
-                newsScrollY = Math.max(0, newsScrollY);
-                newsDetailScrollY = Math.max(0, newsDetailScrollY);
-                dateScrollY = Math.max(0, dateScrollY);
                 clashScrollY = Math.max(0, clashScrollY);
                 return true;
             }
@@ -604,6 +676,41 @@ public class GameScreen implements Screen {
             promptLabel.setVisible(false);
             promptLabel.setTouchable(Touchable.disabled);
             hudStage.addActor(promptLabel);
+
+            phoneTex = new Texture(Gdx.files.internal("ui/icons/icon_phone.png"));
+
+            TextureRegionDrawable phoneDrawable =
+                new TextureRegionDrawable(new TextureRegion(phoneTex));
+
+            phoneBtn = new ImageButton(phoneDrawable);
+
+            phoneBtn.getImage().setScaling(Scaling.stretch);
+
+            phoneBtn.pad(0);
+            phoneBtn.pack();
+
+            Table phoneAnchor = new Table();
+            phoneAnchor.setFillParent(true);
+            phoneAnchor.bottom().right().pad(12f);
+
+
+            phoneAnchor.add(phoneBtn).size(64f, 128f);
+
+            hudStage.addActor(phoneAnchor);
+
+            phoneBtn.addListener(new InputListener() {
+                @Override
+                public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                    if (pointer == -1) game.sfxNavigate.play(game.sfxVolume);
+                }
+            });
+            phoneBtn.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
+                    game.sfxEnter.play(game.sfxVolume);
+                    isPhoneOpen = true;
+                }
+            });
         }
 
 
@@ -873,7 +980,10 @@ public class GameScreen implements Screen {
     public void render(float delta) {
         ScreenUtils.clear(0, 0, 0, 1);
 
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+        if (
+            Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)
+                && !showVictoryScreen
+        )   {
             game.sfxNavigate.play(game.sfxVolume);
             if (!isPaused) {
                 isPaused = true;
@@ -990,7 +1100,6 @@ public class GameScreen implements Screen {
             shapeRenderer.rect(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
             shapeRenderer.end();
 
-            sleepLabel.setText(stats.daysRemaining + " days remaining");
             sleepLabel.setVisible(true);
             sleepLabel.getColor().a = sleepAlpha;
             hudStage.act(0);
@@ -1126,11 +1235,99 @@ public class GameScreen implements Screen {
             }
             stage.act(0f);
             stage.draw();
+            if (showVictoryScreen) {
+
+                if (
+                    Gdx.input.isKeyJustPressed(Input.Keys.S) ||
+                        Gdx.input.isKeyJustPressed(Input.Keys.DOWN) ||
+                        Gdx.input.isKeyJustPressed(Input.Keys.TAB)
+                ) {
+
+                    winSelectedIndex++;
+
+                    if (winSelectedIndex > 1) {
+                        winSelectedIndex = 0;
+                    }
+
+                    if (winSelectedIndex == 0) {
+                        winStage.setKeyboardFocus(winMainMenuButton);
+                    } else {
+                        winStage.setKeyboardFocus(winQuitButton);
+                    }
+
+                }
+
+                if (
+                    Gdx.input.isKeyJustPressed(Input.Keys.W) ||
+                        Gdx.input.isKeyJustPressed(Input.Keys.UP)
+                ) {
+
+                    winSelectedIndex--;
+
+                    if (winSelectedIndex < 0) {
+                        winSelectedIndex = 1;
+                    }
+
+                    if (winSelectedIndex == 0) {
+                        winStage.setKeyboardFocus(winMainMenuButton);
+                    } else {
+                        winStage.setKeyboardFocus(winQuitButton);
+                    }
+
+                }
+
+                Gdx.gl.glEnable(GL20.GL_BLEND);
+
+                shapeRenderer.setProjectionMatrix(
+                    winStage.getCamera().combined
+                );
+
+                shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+
+                shapeRenderer.setColor(0f, 0f, 0f, 1f);
+
+                shapeRenderer.rect(
+                    0,
+                    0,
+                    Gdx.graphics.getWidth(),
+                    Gdx.graphics.getHeight()
+                );
+
+                shapeRenderer.end();
+
+                winStage.act(delta);
+                winStage.draw();
+            }
+
+            if (
+                Gdx.input.isKeyJustPressed(Input.Keys.ENTER)
+                    || Gdx.input.isKeyJustPressed(Input.Keys.SPACE))
+            {
+
+                if (winSelectedIndex == 0) {
+
+                    game.sfxEnter.play(game.sfxVolume);
+
+                    SaveData.save(
+                        stats,
+                        playerBody.getPosition().x,
+                        playerBody.getPosition().y
+                    );
+
+                    game.setScreen(new MainMenuScreen(game));
+
+                } else {
+
+                    game.sfxEnter.play(game.sfxVolume);
+
+                    Gdx.app.exit();
+                }
+            }
         }
         if (isPhoneOpen && !isPaused) {
             phoneGroup.setVisible(true);
             phoneGroup.pack();
-            Gdx.app.log("STAGE", "hudW=" + hudStage.getWidth() + " gdxW=" + Gdx.graphics.getWidth());
+
 
             // Ukuran dan posisi phone
             float bodyH = Math.min(Math.max(Gdx.graphics.getHeight() * 0.55f, 300f), 480f);
@@ -1181,28 +1378,10 @@ public class GameScreen implements Screen {
             float wx3 = sx + wSpacing * 3 + wW * 2;
 
             if (currentPhoneScreen == PhoneScreen.HOME) { // bagian shapeRenderer
-                drawRoundedRect(wx1, wY, wW, wH, 8f, 16, new Color(0.23f, 0.35f, 0.8f, 1f));
-                drawRoundedRect(wx2, wY, wW, wH, 8f, 16, new Color(0.13f, 0.59f, 0.33f, 1f));
-                drawRoundedRect(wx3, wY, wW, wH, 8f, 16, Color.BLACK);
-                drawRoundedRect(wx3 + 2, wY + 2, wW - 4, wH - 4, 6f, 16, new Color(0.1f, 0.1f, 0.1f, 1f));
-
-            } else if (currentPhoneScreen == PhoneScreen.NEWS) {
-                float imgW = screenW - 10f;
-                float imgH = 70f;
-                float imgX = sx + 5f;
-                float img1Y = sy + screenH - sbH - imgH - 10f;
-                float img2Y = img1Y - imgH - 50f;
-
-            } else if (currentPhoneScreen == PhoneScreen.NEWS_DETAIL) {
-                float imgH = 130f;
-                float imgY = sy + screenH - sbH - imgH - 10f + newsDetailScrollY;
-                float imgX = sx + 5f;
-                float imgW = screenW - 10f;
-                float contentBottom2 = sy + navH + 5f;
-                if (imgY + imgH > contentBottom2 && imgY + imgH < sy + screenH - sbH) {
-                }
+                drawRoundedRect(wx1, wY, wW, wH, 8f, 16, new Color(0.1f, 0.1f, 0.1f, 1f));
 
             }
+
             shapeRenderer.end();
 
             // Render teks widget pakai BitmapFont dari skin
@@ -1215,176 +1394,13 @@ public class GameScreen implements Screen {
             float contentBottom = sy + navH + 5f;
 
             if (currentPhoneScreen == PhoneScreen.HOME) { // bagian batch
-                font.setColor(Color.WHITE);
-                gl.setText(font, "N");
-                font.draw(batch, "N", wx1 + (wW - gl.width) / 2f, wY + (wH + gl.height) / 2f);
-                gl.setText(font, "31");
-                font.draw(batch, "31", wx2 + (wW - gl.width) / 2f, wY + (wH + gl.height) / 2f);
                 font.setColor(new Color(0.9f, 0.1f, 0.1f, 1f));
                 gl.setText(font, "VS");
-                font.draw(batch, "VS", wx3 + (wW - gl.width) / 2f, wY + (wH + gl.height) / 2f);
+                font.draw(batch, "VS", wx1 + (wW - gl.width) / 2f, wY + (wH + gl.height) / 2f);
                 font.setColor(Color.BLACK);
                 float lblY = wY - 2f;
-                gl.setText(font, "NEWS");
-                font.draw(batch, "NEWS", wx1 + (wW - gl.width) / 2f, lblY);
-                gl.setText(font, "DATE");
-                font.draw(batch, "DATE", wx2 + (wW - gl.width) / 2f, lblY);
                 gl.setText(font, "CLASH");
-                font.draw(batch, "CLASH", wx3 + (wW - gl.width) / 2f, lblY);
-
-            } else if (currentPhoneScreen == PhoneScreen.NEWS) {
-                font.setColor(Color.BLACK);
-                float imgH = 70f;
-                float img1Y = sy + screenH - sbH - imgH - 10f;
-                float img2Y = img1Y - imgH - 47f;
-
-                float contentTop = sy + screenH - sbH - 5f;
-                float contentH = contentTop - contentBottom;
-
-                batch.end();
-                com.badlogic.gdx.math.Rectangle scissors = new com.badlogic.gdx.math.Rectangle();
-                com.badlogic.gdx.math.Rectangle clipBounds = new com.badlogic.gdx.math.Rectangle(
-                    sx, contentBottom, screenW, sy + screenH - sbH - contentBottom);
-                com.badlogic.gdx.utils.viewport.Viewport vp = hudStage.getViewport();
-                com.badlogic.gdx.scenes.scene2d.utils.ScissorStack.calculateScissors(
-                    hudStage.getCamera(), vp.getScreenX(), vp.getScreenY(),
-                    vp.getScreenWidth(), vp.getScreenHeight(),
-                    batch.getTransformMatrix(), clipBounds, scissors);
-
-                if (com.badlogic.gdx.scenes.scene2d.utils.ScissorStack.pushScissors(scissors)) {
-                    batch.begin();
-                    font.setColor(Color.BLACK);
-                    float scrollimg1Y = sy + screenH - sbH - 70f - 10f + newsScrollY;
-                    float scrollimg2Y = scrollimg1Y - 70f - 47f;
-
-                    // Gambar placeholder pakai batch
-                    batch.setColor(0.7f, 0.7f, 0.7f, 1f);
-                    batch.draw(grayTexture, sx + 5f, scrollimg1Y, screenW - 10f, 70f);
-                    batch.draw(grayTexture, sx + 5f, scrollimg2Y, screenW - 10f, 70f);
-                    batch.setColor(1f, 1f, 1f, 1f);
-
-                    font.setColor(Color.BLACK);
-                    font.draw(batch, NEWS_TITLE[0], sx + 5f, scrollimg1Y - 5f);
-                    font.draw(batch, NEWS_TITLE[1], sx + 5f, scrollimg2Y - 5f);
-
-                    // Setelah berita statis (NEWS_TITLE[0] dan NEWS_TITLE[1])
-                    for (int i = 0; i < winNewsCount; i++) {
-                        float winImg1Y = scrollimg2Y - (i + 1) * (70f + 47f);
-                        batch.setColor(0.8f, 0.9f, 0.8f, 1f); // hijau muda untuk berita menang
-                        batch.draw(grayTexture, sx + 5f, winImg1Y, screenW - 10f, 70f);
-                        batch.setColor(1f, 1f, 1f, 1f);
-                        font.setColor(Color.BLACK);
-                        font.draw(batch, winNewsTitle[i], sx + 5f, winImg1Y - 5f);
-                    }
-                    batch.end();
-                    com.badlogic.gdx.scenes.scene2d.utils.ScissorStack.popScissors();
-                }
-                batch.begin();
-            } else if (currentPhoneScreen == PhoneScreen.NEWS_DETAIL) {
-                float imgH = 130f;
-                float contentTop = sy + screenH -sbH  - 5f;
-                float contentH = contentTop - contentBottom;
-
-                batch.end();
-                com.badlogic.gdx.math.Rectangle scissors = new com.badlogic.gdx.math.Rectangle();
-                com.badlogic.gdx.math.Rectangle clipBounds = new com.badlogic.gdx.math.Rectangle(
-                    sx, contentBottom, screenW, contentH);
-                com.badlogic.gdx.utils.viewport.Viewport vp = hudStage.getViewport();
-                com.badlogic.gdx.scenes.scene2d.utils.ScissorStack.calculateScissors(
-                    hudStage.getCamera(), vp.getScreenX(), vp.getScreenY(),
-                    vp.getScreenWidth(), vp.getScreenHeight(),
-                    batch.getTransformMatrix(), clipBounds, scissors);
-
-                if (com.badlogic.gdx.scenes.scene2d.utils.ScissorStack.pushScissors(scissors)) {
-                    batch.begin();
-                    float scrolledImgY = sy + screenH - sbH - 130f - 10f + newsDetailScrollY;
-                    // Gambar placeholder pakai batch
-                    batch.setColor(0.7f, 0.7f, 0.7f, 1f);
-                    batch.draw(grayTexture, sx + 5f, scrolledImgY, screenW - 10f, 130f);
-                    batch.setColor(Color.WHITE);
-                    // Teks
-                    font.setColor(Color.BLACK);
-                    font.draw(batch, NEWS_TITLE[selectedNewsIndex], sx + 5f, scrolledImgY - 8f);
-                    font.draw(batch, NEWS_DESC[selectedNewsIndex], sx + 5f, scrolledImgY - 25f,
-                        screenW - 10f, com.badlogic.gdx.utils.Align.left, true);
-                    batch.end();
-                    com.badlogic.gdx.scenes.scene2d.utils.ScissorStack.popScissors();
-                }
-                batch.begin();
-
-            } else if (currentPhoneScreen == PhoneScreen.DATE) {
-                float contentTop = sy + screenH - sbH - 5f;
-                float contentH = contentTop - contentBottom;
-
-                batch.end();
-                com.badlogic.gdx.math.Rectangle scissors = new com.badlogic.gdx.math.Rectangle();
-                com.badlogic.gdx.math.Rectangle clipBounds = new com.badlogic.gdx.math.Rectangle(
-                    sx, contentBottom, screenW, contentH);
-                com.badlogic.gdx.utils.viewport.Viewport vp = hudStage.getViewport();
-                com.badlogic.gdx.scenes.scene2d.utils.ScissorStack.calculateScissors(
-                    hudStage.getCamera(), vp.getScreenX(), vp.getScreenY(),
-                    vp.getScreenWidth(), vp.getScreenHeight(),
-                    batch.getTransformMatrix(), clipBounds, scissors);
-
-                if (com.badlogic.gdx.scenes.scene2d.utils.ScissorStack.pushScissors(scissors)) {
-                    batch.begin();
-                    font.setColor(Color.BLACK);
-
-                    // Header bulan
-                    float headerY = sy + screenH - sbH - 15f;
-                    gl.setText(font, "< " + MONTH_NAMES[currentMonth] + " 2024 >");
-                    font.draw(batch, "< " + MONTH_NAMES[currentMonth] + " 2024 >",
-                        sx + (screenW - gl.width) / 2f, headerY);
-
-                    // Header hari
-                    String[] dayNames = {"Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"};
-                    float cellW = screenW / 7f;
-                    float dayHeaderY = headerY - 18f;
-                    for (int i = 0; i < 7; i++) {
-                        gl.setText(font, dayNames[i]);
-                        font.draw(batch, dayNames[i], sx + i * cellW + (cellW - gl.width) / 2f, dayHeaderY);
-                    }
-
-                    // Grid tanggal
-                    // Hitung hari pertama bulan (2024)
-                    java.util.Calendar cal = java.util.Calendar.getInstance();
-                    cal.set(CALENDAR_YEAR, currentMonth, 1);
-                    int firstDay = cal.get(java.util.Calendar.DAY_OF_WEEK) - 1; // 0=Sun
-
-                    int totalDays = DAYS_IN_MONTH[currentMonth];
-                    float cellH = 18f;
-                    float gridStartY = dayHeaderY - cellH;
-
-                    for (int day = 1; day <= totalDays; day++) {
-                        int pos = day - 1 + firstDay;
-                        int col = pos % 7;
-                        int row = pos / 7;
-                        float cx = sx + col * cellW;
-                        float cy = gridStartY - row * cellH;
-
-                        // Cek apakah ada event
-                        boolean hasEvent = false;
-                        for (int e = 0; e < EVENT_MONTHS.length; e++) {
-                            if (EVENT_MONTHS[e] == currentMonth && EVENT_DAYS[e] == day) {
-                                hasEvent = true;
-                                break;
-                            }
-                        }
-
-                        if (hasEvent) {
-                            font.setColor(new Color(0.9f, 0.1f, 0.1f, 1f));
-                        } else {
-                            font.setColor(Color.BLACK);
-                        }
-
-                        gl.setText(font, String.valueOf(day));
-                        font.draw(batch, String.valueOf(day), cx + (cellW - gl.width) / 2f, cy);
-                    }
-
-                    batch.end();
-                    com.badlogic.gdx.scenes.scene2d.utils.ScissorStack.popScissors();
-                }
-                batch.begin();
+                font.draw(batch, "CLASH", wx1 + (wW - gl.width) / 2f, lblY);
 
             } else if (currentPhoneScreen == PhoneScreen.CLASH) {
                 float contentTop = sy + screenH - sbH - 5f;
@@ -1410,7 +1426,19 @@ public class GameScreen implements Screen {
 
                     for (int i = 0; i < CLASH_NAMES.length; i++) {
                         float cardY = sy + screenH - sbH - (i + 1) * (cardH + cardSpacing) + clashScrollY;
-                        boolean unlocked = isAdminMode || totalMuscle >= CLASH_MIN_MUSCLE[i];
+                        boolean unlocked;
+
+                        if (isAdminMode) {
+                            unlocked = true;
+                        } else if (i == 0) {
+                            // Street Tournament always available if muscle requirement met
+                            unlocked = totalMuscle >= CLASH_MIN_MUSCLE[i];
+                        } else {
+                            // Must complete previous tournament first
+                            unlocked =
+                                totalMuscle >= CLASH_MIN_MUSCLE[i]
+                                    && clashComplete[i - 1];
+                        }
 
                         // Background card
                         if (unlocked) {
@@ -1425,23 +1453,63 @@ public class GameScreen implements Screen {
                         font.setColor(unlocked ? Color.BLACK : Color.DARK_GRAY);
                         font.draw(batch, CLASH_NAMES[i], cardX + 5f, cardY + cardH - 10f);
 
+                        if (unlocked && Gdx.input.justTouched()) {
+
+                            float mx = Gdx.input.getX();
+                            float my = Gdx.graphics.getHeight() - Gdx.input.getY();
+
+                            if (mx >= cardX && mx <= cardX + cardW &&
+                                my >= cardY && my <= cardY + cardH) {
+
+                                game.sfxEnter.play(game.sfxVolume);
+
+                                // Pro - Mr Olympia
+                                if (i == 3) {
+
+                                    showVictoryScreen = true;
+
+                                    isPaused = true;
+                                    isPhoneOpen = false;
+
+                                    if (winGroup != null) {
+                                        winGroup.setVisible(true);
+                                    }
+
+                                    winSelectedIndex = 0;
+
+                                    winStage.setKeyboardFocus(winMainMenuButton);
+
+                                    Gdx.input.setInputProcessor(
+                                        new InputMultiplexer(winStage)
+                                    );
+                                }
+                            }
+                        }
+
                         // Syarat
                         if (!unlocked) {
                             font.setColor(Color.RED);
-                            font.draw(batch, "Syarat: Total Muscle " + CLASH_MIN_MUSCLE[i] + " - " + CLASH_MAX_MUSCLE[i],
+                            font.draw(batch, "Syarat: Total Muscle " + CLASH_MIN_MUSCLE[i],
                                 cardX + 5f, cardY + cardH - 28f);
                             font.draw(batch, "Total Muscle kamu: " + totalMuscle,
                                 cardX + 5f, cardY + cardH - 46f);
-                            font.draw(batch, "[ TERKUNCI ]", cardX + 5f, cardY + cardH - 64f);
+                            if (i > 0 && !clashComplete[i - 1]) {
+                                font.draw(batch, "Ikuti tournament sebelumnya",
+                                    cardX + 5f, cardY + cardH - 64f);
+                            } else {
+                                font.draw(batch, "[ TERKUNCI ]",
+                                    cardX + 5f, cardY + cardH - 64f);
+                            }
                         } else {
                             font.setColor(Color.DARK_GRAY);
-                            font.draw(batch, "Total Muscle: " + CLASH_MIN_MUSCLE[i] + "-" + CLASH_MAX_MUSCLE[i],
+                            font.draw(batch, "Total Muscle: " + CLASH_MIN_MUSCLE[i],
                                 cardX + 5f, cardY + cardH - 28f);
-                            font.draw(batch, "Hadiah: +" + (int)CLASH_REWARD_UPPER[i] + " Upper, +" +
-                                    (int)CLASH_REWARD_LOWER[i] + " Lower",
-                                cardX + 5f, cardY + cardH - 46f);
-                            font.draw(batch, "Energy: +" + (int)CLASH_REWARD_ENERGY[i],
-                                cardX + 5f, cardY + cardH - 64f);
+
+                            if (clashComplete[i]) {
+                                font.setColor(Color.GREEN);
+                                font.draw(batch, "[ COMPLETED ]",
+                                    cardX + 5f, cardY + cardH - 46f);
+                            }
                         }
                     }
                     batch.end();
@@ -1452,7 +1520,6 @@ public class GameScreen implements Screen {
 
 // Status bar dan navbar selalu tampil
             font.setColor(Color.BLACK);
-            font.draw(batch, "01/01  |||  BAT", sx + 4f, sy + screenH - 4f);
             gl.setText(font, "BACK");
             font.draw(batch, "BACK", sx + screenW * 0.15f, sy + navH - 6f);
             gl.setText(font, "HOME");
@@ -1483,13 +1550,8 @@ public class GameScreen implements Screen {
                     if (currentPhoneScreen == PhoneScreen.HOME) {
                         isPhoneOpen = false;
                         currentPhoneScreen = PhoneScreen.HOME;
-                    } else if (currentPhoneScreen == PhoneScreen.NEWS_DETAIL) {
-                        currentPhoneScreen = PhoneScreen.NEWS;
-                        newsScrollY = 0f;
                     } else {
                         currentPhoneScreen = PhoneScreen.HOME;
-                        newsScrollY = 0f;
-                        dateScrollY = 0f;
                         clashScrollY = 0f;
                     }
                 }
@@ -1507,53 +1569,8 @@ public class GameScreen implements Screen {
                 if (currentPhoneScreen == PhoneScreen.HOME) {
                     if (mx >= hwx1 && mx <= hwx1 + hwW && my >= hwY && my <= hwY + hwH) {
                         game.sfxEnter.play(game.sfxVolume);
-                        currentPhoneScreen = PhoneScreen.NEWS;
-                        newsScrollY = 0f;
-                    } else if (mx >= hwx2 && mx <= hwx2 + hwW && my >= hwY && my <= hwY + hwH) {
-                        game.sfxEnter.play(game.sfxVolume);
-                        currentPhoneScreen = PhoneScreen.DATE;
-                        dateScrollY = 0f;
-                    } else if (mx >= hwx3 && mx <= hwx3 + hwW && my >= hwY && my <= hwY + hwH) {
-                        game.sfxEnter.play(game.sfxVolume);
                         currentPhoneScreen = PhoneScreen.CLASH;
                         clashScrollY = 0f;
-                    }
-                }
-
-// Hitbox berita — hanya aktif di NEWS
-                if (currentPhoneScreen == PhoneScreen.NEWS) {
-                    float imgH = 70f;
-                    float img1Y = sy + screenH - sbH - imgH - 10f;
-                    float img2Y = img1Y - imgH - 40f;
-                    float imgW = screenW - 10f;
-                    float imgX = sx + 5f;
-
-                    if (mx >= imgX && mx <= imgX + imgW && my >= img1Y - 25f && my <= img1Y + imgH) {
-                        selectedNewsIndex = 0;
-                        currentPhoneScreen = PhoneScreen.NEWS_DETAIL;
-                        game.sfxEnter.play(game.sfxVolume);
-                    } else if (mx >= imgX && mx <= imgX + imgW && my >= img2Y - 25f && my <= img2Y + imgH) {
-                        selectedNewsIndex = 1;
-                        currentPhoneScreen = PhoneScreen.NEWS_DETAIL;
-                        game.sfxEnter.play(game.sfxVolume);
-                    }
-                }
-
-                if (currentPhoneScreen == PhoneScreen.DATE) {
-                    float headerY = sy + screenH - sbH - 15f;
-                    float btnW = screenW * 0.35f;
-                    Gdx.app.log("DATE", "mx=" + mx + " my=" + my + " headerY=" + headerY + " sx=" + sx + " sx+btnW=" + (sx+btnW));
-
-
-                    // Tombol
-                    if (mx >= sx && mx <= sx + btnW && my >= headerY - 15f && my <= headerY + 5f) {
-                        currentMonth = Math.max(0, currentMonth - 1);
-                        game.sfxNavigate.play(game.sfxVolume);
-                    }
-                    // Tombol >
-                    if (mx >= sx + screenW - btnW && mx <= sx + screenW && my >= headerY - 15f && my <= headerY + 5f) {
-                        currentMonth = Math.min(11, currentMonth + 1);
-                        game.sfxNavigate.play(game.sfxVolume);
                     }
                 }
 
@@ -1566,22 +1583,29 @@ public class GameScreen implements Screen {
 
                     for (int i = 0; i < CLASH_NAMES.length; i++) {
                         float cardY = sy + screenH - sbH - (i + 1) * (cardH + cardSpacing) + clashScrollY;
-                        boolean unlocked = isAdminMode || totalMuscle >= CLASH_MIN_MUSCLE[i];
+                        boolean unlocked;
+
+                        if (isAdminMode) {
+                            unlocked = true;
+                        } else if (i == 0) {
+                            // Street Tournament always available if muscle requirement met
+                            unlocked = totalMuscle >= CLASH_MIN_MUSCLE[i];
+                        } else {
+                            // Must complete previous tournament first
+                            unlocked =
+                                totalMuscle >= CLASH_MIN_MUSCLE[i]
+                                    && clashComplete[i - 1];
+                        }
 
                         if (unlocked && mx >= cardX && mx <= cardX + cardW &&
                             my >= cardY && my <= cardY + cardH) {
-                            if (!clashWon[i]) {  // hanya sekali per turnamen
-                                clashWon[i] = true;
-                                winNewsTitle[winNewsCount] = "Menang di " + CLASH_NAMES[i] + "!";
-                                winNewsDesc[winNewsCount] = "Player berhasil memenangkan " + CLASH_NAMES[i] +
-                                    " dan mendapatkan hadiah muscle boost!";
-                                winNewsCount++;
-                            }
-                            stats.addUpperMuscle(CLASH_REWARD_UPPER[i]);
-                            stats.addLowerMuscle(CLASH_REWARD_LOWER[i]);
-                            stats.addEnergy(CLASH_REWARD_ENERGY[i]);
-                            updateHud();  // ← tambahkan ini
+
                             game.sfxEnter.play(game.sfxVolume);
+
+                            // Mark tournament as completed
+                            clashComplete[i] = true;
+
+                            updateHud();
                             break;
                         }
                     }
@@ -1589,25 +1613,55 @@ public class GameScreen implements Screen {
 
             }
             phoneStage.act(delta);
+            phoneBtn.setVisible(false);
             hudStage.act(delta);
             hudStage.draw();
 
         } else {
-            if (phoneGroup != null) phoneGroup.setVisible(false);
-            if (!isPaused && !showSleepScreen) {
-                updateHud();
-                hudStage.act(delta);
-                hudStage.draw();
-            } else if ( showSleepScreen) {
-                hudStage.act(0);
-                hudStage.draw();
+
+            if (phoneGroup != null) {
+                phoneGroup.setVisible(false);
+            }
+
+            // CHICKEN SCREEN OPEN
+            if (chickenScreenOpen) {
+
+                // Hide all HUD elements
+                hudRoot.setVisible(false);
+                promptLabel.setVisible(false);
+
+                if (phoneBtn != null) {
+                    phoneBtn.setVisible(false);
+                }
+
+                chickenStage.act(delta);
+                chickenStage.draw();
+
+            } else {
+
+                // Restore HUD visibility
+                hudRoot.setVisible(true);
+
+                phoneBtn.setVisible(!isPaused && !showSleepScreen);
+
+                if (!isPaused && !showSleepScreen) {
+
+                    updateHud();
+                    hudStage.act(delta);
+                    hudStage.draw();
+
+                } else if (showSleepScreen) {
+
+                    hudStage.act(0);
+                    hudStage.draw();
+                }
             }
         }
     }
 
     private void updateHud() {
-        caloriesLabel.setText("Calories: " + (int) stats.cal);
-        energyLabel  .setText("Energy: "   + (int) stats.energy);
+        caloriesLabel.setText("Kalori: " + (int) stats.cal);
+        energyLabel  .setText("Energi: "   + (int) stats.energy);
         upperLabel   .setText("Upper: "    + (int) stats.upperMuscle);
         lowerLabel   .setText("Lower: "    + (int) stats.lowerMuscle);
         totalLabel   .setText("Total Muscle: " + (int) stats.totalMuscle());
@@ -1648,21 +1702,94 @@ public class GameScreen implements Screen {
                     e.flipX, e.flipY);
             }
         }
-        // Player frame (same as before)
+        // Player frame
         animTime += Gdx.graphics.getDeltaTime();
         TextureRegion frame = currentAnimation.getKeyFrame(animTime, true);
-        float drawW = frame.getRegionWidth() / PPM;
-        float drawH = frame.getRegionHeight() / PPM;
-        batch.draw(frame,
+
+        float baseW = frame.getRegionWidth() / PPM;
+        float baseH = frame.getRegionHeight() / PPM;
+
+        float totalMuscle = stats.totalMuscle();
+
+        float scale = 1f + (totalMuscle * 0.025f);
+
+        float drawW = baseW * scale;
+        float drawH = baseH * scale;
+
+        batch.draw(
+            frame,
             playerPos.x - drawW / 2f,
             playerPos.y - drawH / 2f,
-            drawW, drawH);
+            drawW,
+            drawH
+        );
     }
 
     private void handleInput() {
         float speed = 4.2f;
         float vx = 0;
         float vy = 0;
+
+        if (chickenScreenOpen) {
+
+            playerBody.setLinearVelocity(0, 0);
+
+            boolean navigate =
+                Gdx.input.isKeyJustPressed(Input.Keys.TAB)  ||
+                    Gdx.input.isKeyJustPressed(Input.Keys.W)    ||
+                    Gdx.input.isKeyJustPressed(Input.Keys.S)    ||
+                    Gdx.input.isKeyJustPressed(Input.Keys.UP)   ||
+                    Gdx.input.isKeyJustPressed(Input.Keys.DOWN);
+
+            // Highlight chickenButton only after navigation
+            if (navigate) {
+
+                game.sfxNavigate.play(game.sfxVolume);
+
+                if (chickenButton != null) {
+                    chickenStage.setKeyboardFocus(chickenButton);
+                }
+            }
+
+            // ENTER / SPACE = press chicken button
+            if (
+                Gdx.input.isKeyJustPressed(Input.Keys.ENTER) ||
+                    Gdx.input.isKeyJustPressed(Input.Keys.SPACE)
+            ) {
+
+                if (chickenButton != null) {
+
+                    game.sfxEnter.play(game.sfxVolume);
+
+                    Interaction kitchen =
+                        interactions.get("kitchen");
+
+                    if (kitchen != null) {
+
+                        stats.addCalories(kitchen.calDelta);
+                        stats.addEnergy(kitchen.energyDelta);
+                    }
+
+                    chickenScreenOpen = false;
+                    chickenStage.setKeyboardFocus(null);
+
+                    hudRoot.setVisible(true);
+
+                    if (phoneBtn != null) {
+                        phoneBtn.setVisible(true);
+                    }
+
+                    Gdx.input.setInputProcessor(
+                        new InputMultiplexer(hudStage, scrollAdapter)
+                    );
+
+                    if (chickenGroup != null) {
+                        chickenGroup.setVisible(false);
+                    }
+                }
+            }
+            return;
+        }
 
         if (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) &&
             Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)) {
@@ -1716,6 +1843,8 @@ public class GameScreen implements Screen {
                 }
             }
         }
+
+
     }
 
         private void handleInteraction(String type) {
@@ -1723,18 +1852,35 @@ public class GameScreen implements Screen {
             if (action == null) return;
 
             if (action.type == Interaction.Type.FOOD) {
-                stats.addCalories(action.calDelta);
-                stats.addEnergy(action.energyDelta);
+                chickenScreenOpen = true;
+
+                hudRoot.setVisible(false);
+
+                if (phoneBtn != null) {
+                    phoneBtn.setVisible(false);
+                }
+
+                playerBody.setLinearVelocity(0, 0);
+
+                if (chickenGroup != null) {
+                    chickenGroup.setVisible(true);
+                    chickenGroup.toFront();
+                }
+
+                chickenStage.setKeyboardFocus(null);
+
+                Gdx.input.setInputProcessor(chickenStage);
+
+                chickenSelectedIndex = 0;
 
             } else if (action.type == Interaction.Type.EX_UPPER ||
                 action.type == Interaction.Type.EX_LOWER) {
-                if (!isAdminMode && stats.isTired()) return; // ← ubah ini
+                if (!isAdminMode && stats.isTired()) return;
                 if (!isAdminMode) stats.addEnergy(-action.energyCost);
                 stats.addCalories(action.calDelta);
                 stats.addUpperMuscle(action.upperDelta);
                 stats.addLowerMuscle(action.lowerDelta);
             } else if (action.type == Interaction.Type.REST) {
-                stats.daysRemaining--;
                 stats.addEnergy(PlayerStats.MAX_ENERGY);
                 stats.addCalories(-100f);
                 showSleepScreen = true;
@@ -1762,7 +1908,11 @@ public class GameScreen implements Screen {
     @Override
     public void resize(int width, int height) {
         viewport.update(width, height, true);
-        if ( phoneStage != null) phoneStage.getViewport().update(width, height, true);
+        if (phoneStage != null) phoneStage.getViewport().update(width, height, true);
+        if (hudStage != null) hudStage.getViewport().update(width, height, true);
+        if (chickenStage != null) {
+            chickenStage.getViewport().update(width, height, true);
+        }
     }
 
     @Override
@@ -1803,6 +1953,7 @@ public class GameScreen implements Screen {
         icoLower.dispose();
         icoTotal.dispose();
         grayTexture.dispose();
+        phoneTex.dispose();
+        chickenStage.dispose();
     }
-
 }
