@@ -50,6 +50,21 @@ public class GameScreen implements Screen {
     private enum SleepPhase {FADE_IN, HOLD, FADE_OUT}
     private SleepPhase sleepPhase = SleepPhase.FADE_IN;
 
+    //Layar intro berita
+    private Stage beritaStage;
+    private Table beritaGroup;
+
+    private boolean showBeritaScreen;
+    private float beritaAlpha = 0f;
+
+    private enum BeritaPhase {
+        FADE_IN,
+        HOLD,
+        FADE_OUT
+    }
+
+    private BeritaPhase beritaPhase = BeritaPhase.FADE_IN;
+
     // Zona interaksi di map
     private final java.util.Map<String, Interaction> interactions = new java.util.HashMap<>();
 
@@ -62,7 +77,7 @@ public class GameScreen implements Screen {
     private Table hudRoot;
     private final PlayerStats stats = new PlayerStats();
     private Stage hudStage;
-    private Label caloriesLabel, energyLabel, upperLabel, lowerLabel, totalLabel;
+    private Label caloriesLabel, energyLabel, upperLabel, lowerLabel, totalLabel, sleepLabel;
     private Label adminLabel;
 
     private TiledMap map;
@@ -98,6 +113,8 @@ public class GameScreen implements Screen {
     private Stage stage;
     private boolean isPaused = false;
     private boolean inOptionMenu = false;
+
+    //field layar menang
     private Stage winStage;
     private Table winGroup;
 
@@ -106,6 +123,16 @@ public class GameScreen implements Screen {
 
     private boolean showVictoryScreen = false;
     private int winSelectedIndex = 0;
+
+    //field layar kalah
+    private Stage loseStage;
+    private Table loseGroup;
+
+    private TextButton loseMainMenuButton;
+    private TextButton loseQuitButton;
+
+    private boolean showLoseScreen = false;
+    private int loseSelectedIndex = 0;
 
     private Slider musicSlider;
     private Slider sfxSlider;
@@ -201,10 +228,15 @@ public class GameScreen implements Screen {
 
 
     private final SaveData saveData;
+
     public GameScreen(BulkChef game) { this(game, null); }
+
     public GameScreen(BulkChef game, SaveData saveData) {
         this.game = game;
         this.saveData = saveData;
+
+        this.showBeritaScreen = (saveData == null);
+
     }
 
     @Override
@@ -216,7 +248,7 @@ public class GameScreen implements Screen {
             stats.energy = saveData.energy;
             stats.upperMuscle = saveData.upperMuscle;
             stats.lowerMuscle = saveData.lowerMuscle;
-
+            stats.daysRemaining = saveData.daysRemaining;
         }
 
         camera = new OrthographicCamera();
@@ -292,6 +324,24 @@ public class GameScreen implements Screen {
         shapeRenderer = new ShapeRenderer();
 
         stage = new Stage(new ScreenViewport());
+
+        beritaStage = new Stage(new ScreenViewport());
+
+        SceneComposerStageBuilder beritaBuilder =
+            new SceneComposerStageBuilder();
+
+        beritaBuilder.build(
+            beritaStage,
+            game.skin,
+            Gdx.files.internal("ui/berita/berita.json")
+        );
+
+        beritaGroup =
+            (Table) beritaStage.getRoot().getChildren().first();
+
+        if (beritaGroup != null) {
+            beritaGroup.setVisible(true);
+        }
 
         SceneComposerStageBuilder builder = new SceneComposerStageBuilder();
         builder.build(stage, game.skin, Gdx.files.internal("ui/pause/pausemenu2.json"));
@@ -545,6 +595,61 @@ public class GameScreen implements Screen {
             });
         }
 
+        loseStage = new Stage(new ScreenViewport());
+
+        SceneComposerStageBuilder loseBuilder =
+            new SceneComposerStageBuilder();
+
+        loseBuilder.build(
+            loseStage,
+            game.skin,
+            Gdx.files.internal("ui/losescreen/losescreen.json")
+        );
+
+        loseGroup = (Table) loseStage.getRoot().getChildren().first();
+
+        loseMainMenuButton =
+            loseStage.getRoot().findActor("mainmenu");
+
+        loseQuitButton =
+            loseStage.getRoot().findActor("quit");
+
+        if (loseGroup != null) {
+            loseGroup.setVisible(false);
+        }
+
+        if (loseMainMenuButton != null) {
+
+            loseMainMenuButton.addListener(new ChangeListener() {
+
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
+
+                    game.sfxEnter.play(game.sfxVolume);
+
+                    Gdx.files.local("save.json").delete();
+
+                    game.setScreen(new MainMenuScreen(game));
+                }
+            });
+        }
+
+        if (loseQuitButton != null) {
+
+            loseQuitButton.addListener(new ChangeListener() {
+
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
+
+                    game.sfxEnter.play(game.sfxVolume);
+
+                    Gdx.files.local("save.json").delete();
+
+                    Gdx.app.exit();
+                }
+            });
+        }
+
         phoneStage.getViewport().update(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true);
 
         SceneComposerStageBuilder phoneBuilder = new SceneComposerStageBuilder();
@@ -628,7 +733,6 @@ public class GameScreen implements Screen {
 
         private void buildHud() {
             hudStage = new Stage(new ScreenViewport());
-
 
             hudRoot = new Table();
             hudRoot.setFillParent(true);
@@ -978,10 +1082,10 @@ public class GameScreen implements Screen {
 
         if (
             Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)
-                && !showVictoryScreen
+                && !showVictoryScreen && !showLoseScreen
         )   {
             game.sfxNavigate.play(game.sfxVolume);
-            if (!isPaused) {
+            if (!isPaused && !showBeritaScreen) {
                 isPaused = true;
                 inOptionMenu = false;
                 playerBody.setLinearVelocity(0, 0);
@@ -1032,7 +1136,7 @@ public class GameScreen implements Screen {
 
         Vector2 playerPos = playerBody.getPosition();
 
-        if (!isPaused) {
+        if (!isPaused && !showBeritaScreen) {
             handleInput();
             world.step(1 / 60f, 6, 2);
 
@@ -1069,6 +1173,74 @@ public class GameScreen implements Screen {
             game.sfxEnter.play(game.sfxVolume);
         }
 
+        if (showBeritaScreen) {
+
+            float speed = 0.8f;
+
+            if (beritaPhase == BeritaPhase.FADE_IN) {
+
+                beritaAlpha =
+                    Math.min(1f, beritaAlpha + delta * speed);
+
+                if (beritaAlpha >= 1f) {
+                    beritaPhase = BeritaPhase.HOLD;
+                }
+
+            } else if (beritaPhase == BeritaPhase.HOLD) {
+
+                beritaAlpha = 1f;
+
+                if (
+                    Gdx.input.isKeyJustPressed(Input.Keys.SPACE) || Gdx.input.isKeyJustPressed(Input.Keys.ENTER)
+                ) {
+                    beritaPhase = BeritaPhase.FADE_OUT;
+                }
+
+            } else if (beritaPhase == BeritaPhase.FADE_OUT) {
+
+                beritaAlpha =
+                    Math.max(0f, beritaAlpha - delta * speed);
+
+                if (beritaAlpha <= 0f) {
+
+                    showBeritaScreen = false;
+                }
+            }
+
+            // Dark background
+            Gdx.gl.glEnable(GL20.GL_BLEND);
+
+            shapeRenderer.setProjectionMatrix(
+                beritaStage.getCamera().combined
+            );
+
+            shapeRenderer.begin(
+                ShapeRenderer.ShapeType.Filled
+            );
+
+            shapeRenderer.setColor(
+                0f,
+                0f,
+                0f,
+                beritaAlpha
+            );
+
+            shapeRenderer.rect(
+                0,
+                0,
+                Gdx.graphics.getWidth(),
+                Gdx.graphics.getHeight()
+            );
+
+            shapeRenderer.end();
+
+            // Apply alpha to berita UI
+            beritaStage.getRoot().getColor().a = beritaAlpha;
+
+            beritaStage.act(delta);
+            beritaStage.draw();
+        }
+
         if (showSleepScreen) {
             float speed = 0.8f;
             if (sleepPhase == SleepPhase.FADE_IN) {
@@ -1082,15 +1254,43 @@ public class GameScreen implements Screen {
                 }
             } else {
                 sleepAlpha = Math.max(0f, sleepAlpha - delta * speed);
+
                 if (sleepAlpha <= 0f) {
 
                     showSleepScreen = false;
-                    isPaused = false;
 
-                    hudRoot.setVisible(true);
+                    if (
+                        stats.daysRemaining <= 0
+                            && !showVictoryScreen
+                    ) {
 
-                    if (phoneBtn != null) {
-                        phoneBtn.setVisible(true);
+                        showLoseScreen = true;
+
+                        isPaused = true;
+
+                        if (loseGroup != null) {
+                            loseGroup.setVisible(true);
+                        }
+
+                        loseSelectedIndex = 0;
+
+                        loseStage.setKeyboardFocus(
+                            loseMainMenuButton
+                        );
+
+                        Gdx.input.setInputProcessor(
+                            new InputMultiplexer(loseStage)
+                        );
+
+                    } else {
+
+                        isPaused = false;
+
+                        hudRoot.setVisible(true);
+
+                        if (phoneBtn != null) {
+                            phoneBtn.setVisible(true);
+                        }
                     }
                 }
             }
@@ -1102,6 +1302,18 @@ public class GameScreen implements Screen {
             shapeRenderer.end();
 
             hudStage.getBatch().begin();
+
+            sleepLabel = new Label(stats.daysRemaining + " Hari tersisa", game.skin, "big");
+
+            sleepLabel.pack();
+
+            sleepLabel.setPosition(
+                (Gdx.graphics.getWidth() - sleepLabel.getWidth()) / 2f,
+                (Gdx.graphics.getHeight() - sleepLabel.getHeight()) / 2f
+            );
+
+            sleepLabel.draw(hudStage.getBatch(), sleepAlpha);
+
             hudStage.getBatch().end();
         }
 
@@ -1298,10 +1510,85 @@ public class GameScreen implements Screen {
                 winStage.draw();
             }
 
+            if (showLoseScreen) {
+
+                if (
+                    Gdx.input.isKeyJustPressed(Input.Keys.S) ||
+                        Gdx.input.isKeyJustPressed(Input.Keys.DOWN) ||
+                        Gdx.input.isKeyJustPressed(Input.Keys.TAB)
+                ) {
+
+                    loseSelectedIndex++;
+
+                    if (loseSelectedIndex > 1) {
+                        loseSelectedIndex = 0;
+                    }
+
+                    if (loseSelectedIndex == 0) {
+                        loseStage.setKeyboardFocus(
+                            loseMainMenuButton
+                        );
+                    } else {
+                        loseStage.setKeyboardFocus(
+                            loseQuitButton
+                        );
+                    }
+                }
+
+                if (
+                    Gdx.input.isKeyJustPressed(Input.Keys.W) ||
+                        Gdx.input.isKeyJustPressed(Input.Keys.UP)
+                ) {
+
+                    loseSelectedIndex--;
+
+                    if (loseSelectedIndex < 0) {
+                        loseSelectedIndex = 1;
+                    }
+
+                    if (loseSelectedIndex == 0) {
+                        loseStage.setKeyboardFocus(
+                            loseMainMenuButton
+                        );
+                    } else {
+                        loseStage.setKeyboardFocus(
+                            loseQuitButton
+                        );
+                    }
+                }
+
+                Gdx.gl.glEnable(GL20.GL_BLEND);
+
+                shapeRenderer.setProjectionMatrix(
+                    loseStage.getCamera().combined
+                );
+
+                shapeRenderer.begin(
+                    ShapeRenderer.ShapeType.Filled
+                );
+
+                shapeRenderer.setColor(0f, 0f, 0f, 1f);
+
+                shapeRenderer.rect(
+                    0,
+                    0,
+                    Gdx.graphics.getWidth(),
+                    Gdx.graphics.getHeight()
+                );
+
+                shapeRenderer.end();
+
+                loseStage.act(delta);
+                loseStage.draw();
+            }
+
             if (
-                Gdx.input.isKeyJustPressed(Input.Keys.ENTER)
-                    || Gdx.input.isKeyJustPressed(Input.Keys.SPACE))
-            {
+                showVictoryScreen &&
+                    (
+                        Gdx.input.isKeyJustPressed(Input.Keys.ENTER)
+                            || Gdx.input.isKeyJustPressed(Input.Keys.SPACE)
+                    )
+            ) {
 
                 if (winSelectedIndex == 0) {
 
@@ -1322,7 +1609,34 @@ public class GameScreen implements Screen {
                     Gdx.app.exit();
                 }
             }
+
+            if (
+                showLoseScreen &&
+                    (
+                        Gdx.input.isKeyJustPressed(Input.Keys.ENTER)
+                            || Gdx.input.isKeyJustPressed(Input.Keys.SPACE)
+                    )
+            ) {
+
+                if (loseSelectedIndex == 0) {
+
+                    game.sfxEnter.play(game.sfxVolume);
+
+                    Gdx.files.local("save.json").delete();
+
+                    game.setScreen(new MainMenuScreen(game));
+
+                } else {
+
+                    game.sfxEnter.play(game.sfxVolume);
+
+                    Gdx.files.local("save.json").delete();
+
+                    Gdx.app.exit();
+                }
+            }
         }
+
         if (isPhoneOpen && !isPaused) {
             phoneGroup.setVisible(true);
             phoneGroup.pack();
@@ -1643,7 +1957,7 @@ public class GameScreen implements Screen {
 
                 phoneBtn.setVisible(!isPaused && !showSleepScreen);
 
-                if (!isPaused && !showSleepScreen) {
+                if (!isPaused && !showSleepScreen && !showBeritaScreen) {
 
                     updateHud();
                     hudStage.act(delta);
@@ -1886,12 +2200,17 @@ public class GameScreen implements Screen {
                 stats.addCalories(action.calDelta);
                 stats.addUpperMuscle(action.upperDelta);
                 stats.addLowerMuscle(action.lowerDelta);
+
             } else if (action.type == Interaction.Type.REST) {
                 stats.addEnergy(PlayerStats.MAX_ENERGY);
                 stats.addCalories(-100f);
+
+                stats.daysRemaining--;
+
                 showSleepScreen = true;
                 sleepPhase = SleepPhase.FADE_IN;
                 sleepAlpha = 0f;
+
                 isPaused = true;
                 hudRoot.setVisible(false);
                 promptLabel.setVisible(false);

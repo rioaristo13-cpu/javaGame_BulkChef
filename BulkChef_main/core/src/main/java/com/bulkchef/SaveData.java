@@ -5,13 +5,18 @@ import com.badlogic.gdx.utils.Json;
 
 public class SaveData {
     public float cal, energy, upperMuscle, lowerMuscle;
+    public int daysRemaining;
     public float posX, posY;
 
     public static void save(PlayerStats stats, float posX, float posY) {
         SaveData d = new SaveData();
-        d.cal = stats.cal; d.energy = stats.energy;
-        d.upperMuscle = stats.upperMuscle; d.lowerMuscle = stats.lowerMuscle;
-        d.posX = posX; d.posY = posY;
+        d.cal = stats.cal;
+        d.energy = stats.energy;
+        d.upperMuscle = stats.upperMuscle;
+        d.lowerMuscle = stats.lowerMuscle;
+        d.daysRemaining = stats.daysRemaining;
+        d.posX = posX;
+        d.posY = posY;
         Gdx.files.local("save.json").writeString(new Json().toJson(d), false);
     }
 
