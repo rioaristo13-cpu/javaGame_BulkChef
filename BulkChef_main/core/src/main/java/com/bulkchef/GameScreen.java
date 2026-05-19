@@ -191,7 +191,7 @@ public class GameScreen implements Screen {
         "Street Tournament",
         "Novice - Open Classic",
         "Advance - IFBB Pro",
-        "Pro - Mr. Olympia"
+        "Final - BulkCup"
     };
     private static final int[] CLASH_MIN_MUSCLE = {10, 25, 50, 100};
     private boolean[] clashComplete = new boolean[CLASH_NAMES.length];
@@ -264,10 +264,10 @@ public class GameScreen implements Screen {
         loadInteractionLayer();
 
         //Interaksi objek objek di game dengan skor
-        interactions.put("treadmill",  new Interaction("Run",   Interaction.Type.EX_LOWER,  -240f, 0, 0,    5f,10f));
-        interactions.put("benchpress", new Interaction("Bench", Interaction.Type.EX_UPPER,  -250f, 0, 5f,  0,  10f));
-        interactions.put("cycling",    new Interaction("Ride",  Interaction.Type.EX_LOWER,  -230f, 0, 0,    5f,10f));
-        interactions.put("dumbell",    new Interaction("Lift",  Interaction.Type.EX_UPPER,  -220f, 0, 5f,  0,  10f));
+        interactions.put("treadmill",  new Interaction("Run",   Interaction.Type.EX_LOWER,  -240f, 0, 0,    5f,25f));
+        interactions.put("benchpress", new Interaction("Bench", Interaction.Type.EX_UPPER,  -250f, 0, 5f,  0,  25f));
+        interactions.put("cycling",    new Interaction("Ride",  Interaction.Type.EX_LOWER,  -230f, 0, 0,    5f,25f));
+        interactions.put("dumbell",    new Interaction("Lift",  Interaction.Type.EX_UPPER,  -220f, 0, 5f,  0,  25f));
         interactions.put("kitchen",    new Interaction("Cook",  Interaction.Type.FOOD,      1000f, 0f,0,    0,  0f));
         interactions.put("bed",        new Interaction("Sleep", Interaction.Type.REST,      0,     0, 0,    0,  0));
 
