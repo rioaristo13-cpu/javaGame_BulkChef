@@ -9,7 +9,7 @@
    eJxjYBg4cAqIT6NhXOLUwDBwG4jvoOGBtBebODUwPntPD6C9ZwbAXlriUXtH7YWpGyh7qRkmo/aODHuxAULytAK3h6m9AO9QeFo=
   </data>
  </layer>
- <layer id="3" name="background" width="30" height="20">
+ <layer id="3" name="background" width="30" height="20" offsetx="0" offsety="0.25">
   <data encoding="base64" compression="zlib">
    eJyTZWBgcGXExAI4xKmB5YFm6wFxGCMmVsQhTg0MtPMAyN5TQHwaDYPspRWA2YsNKDEwOAyEve6MtLIVv70RQHtvD4C9oDg+MwD20hKM2ju47NWhsr0GELsJAnLKLkEG3OUzsf4lx153IspnWtgbgae8o6W9+AAt7cWXFkH22jNAKh5kLA2Vl4HybbGoIYTx6XHE7R4wMMDjZloAetgLAKI3NpU=
   </data>
@@ -126,9 +126,4 @@
    <ellipse/>
   </object>
  </objectgroup>
- <layer id="2" name="foreground" width="30" height="20" locked="1">
-  <data encoding="base64" compression="zlib">
-   eJztwTEBAAAAwqD1T20JT6AAAHgaCWAAAQ==
-  </data>
- </layer>
 </map>

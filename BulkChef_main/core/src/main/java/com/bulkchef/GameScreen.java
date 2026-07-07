@@ -28,7 +28,6 @@ import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.scenes.scene2d.*;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
-import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.Array;
@@ -1687,8 +1686,6 @@ public class GameScreen implements Screen {
             float wY = sy + screenH - sbH - wH - 10f;
             float wSpacing = (screenW - 3 * wW) / 4f;
             float wx1 = sx + wSpacing;
-            float wx2 = sx + wSpacing * 2 + wW;
-            float wx3 = sx + wSpacing * 3 + wW * 2;
 
             if (currentPhoneScreen == PhoneScreen.HOME) { // bagian shapeRenderer
                 drawRoundedRect(wx1, wY, wW, wH, 8f, 16, new Color(0.1f, 0.1f, 0.1f, 1f));
@@ -1846,8 +1843,6 @@ public class GameScreen implements Screen {
             float hwY = sy + screenH - sbH - hwH - 10f;
             float hwSpacing = (screenW - 3 * hwW) / 4f;
             float hwx1 = sx + hwSpacing;
-            float hwx2 = sx + hwSpacing * 2 + hwW;
-            float hwx3 = sx + hwSpacing * 3 + hwW * 2;
 
             if (Gdx.input.justTouched()) {
                 float mx = Gdx.input.getX();

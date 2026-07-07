@@ -27,9 +27,6 @@ public class PlayerStats {
         energy = Math.max(0, Math.min(energy + amount, MAX_ENERGY));
     }
 
-    public boolean isHungry()  { return cal <= 0; }
-    public boolean isTired() { return energy <= 0; }
-
     public float cal = 600f;
     public float energy = 100f;
     public float upperMuscle = 0f;

@@ -16,21 +16,22 @@ public class BulkChef extends Game {
 
     @Override
     public void create() {
+        //Elemen elemen UI yang dipakai untuk game ini
         skin = new Skin(Gdx.files.internal("ui/skin/comic-ui.json"));
 
+        //Efek efek suara menu dan musik
         bgm = Gdx.audio.newMusic(Gdx.files.internal("audio/bgm.mp3"));
         bgm.setLooping(true);
-        bgm.setVolume(0.5f);
-
+        bgm.setVolume(0.4f);
         sfxNavigate = Gdx.audio.newSound(Gdx.files.internal("audio/sfx_navigate.mp3"));
         sfxEnter = Gdx.audio.newSound(Gdx.files.internal("audio/sfx_enter.mp3"));
 
+        //Membuka Screen Menu utama
         setScreen(new MainMenuScreen(this));
     }
 
     @Override
     public void dispose() {
-
         skin.dispose();
         bgm.dispose();
         sfxNavigate.dispose();
