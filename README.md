@@ -1,7 +1,8 @@
 ![Logo](assets/ui/skin/cover.png)
 
+# Dokumentasi
+https://docs.google.com/document/d/12OvXEiVhCFcPibseVi7zMDZTkwASUy1H7Zr3MlD1SGo/edit?usp=sharing
 # BulkChef
-
 Proyek [libGDX](https://libgdx.com/) yang dihasilkan dengan [gdx-liftoff](https://github.com/libgdx/gdx-liftoff).
 
 Proyek ini dihasilkan dengan templat yang mencakup peluncur aplikasi sederhana dan ekstensi `ApplicationAdapter` yang menggambar logo libGDX.
